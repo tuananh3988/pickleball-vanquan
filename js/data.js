@@ -3,7 +3,7 @@
  * Cấu trúc chuẩn hóa: Quản lý các buổi đấu, tỉ số từng trận đôi và chi phí (sân, bóng, nước, bia).
  */
 
-const PICKLEBALL_DATA = {
+window.PICKLEBALL_DATA = {
   clubName: "Pickleball Văn Quán",
   subTitle: "Hệ thống Thống kê Thi đấu & Sổ quỹ CLB",
   defaultLossPenalty: 10000, // 10.000 VNĐ / trận thua

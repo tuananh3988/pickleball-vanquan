@@ -2,7 +2,7 @@
  * Application Controller - Pickleball Văn Quán
  */
 
-const App = {
+window.App = {
   activeTab: 'leaderboard',
   currentFilter: { type: 'all' },
   currentSessionId: null,

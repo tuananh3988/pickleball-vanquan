@@ -2,7 +2,7 @@
  * Module Tính toán Thống kê & Phân bổ Chi phí - Pickleball Văn Quán
  */
 
-const Calculator = {
+window.Calculator = {
   /**
    * Tính toán chi tiết tài chính và thống kê cho một buổi chơi cụ thể
    * @param {Object} session - Dữ liệu buổi chơi
