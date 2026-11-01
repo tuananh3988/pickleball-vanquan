@@ -120,74 +120,80 @@
     <!-- ========================================== -->
     <section id="section-sessions" class="space-y-6">
       
-      <!-- Session Selector -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <!-- Session Header & Selector -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <span class="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+          </span>
           <div>
-            <div class="flex items-center space-x-2">
-              <span class="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
-                <i data-lucide="receipt" class="w-6 h-6"></i>
-              </span>
-              <div>
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Chi Tiết Buổi Chơi & Sổ Quỹ</h2>
-              </div>
-            </div>
-          </div>
-
-          <!-- Dropdown Session Selector -->
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="relative">
-              <select id="session-select" onchange="App.selectSession(this.value)" class="appearance-none bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-sm rounded-xl py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-pickle-400 cursor-pointer shadow-sm">
-                <!-- Populated dynamically -->
-              </select>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-            </div>
+            <h2 id="session-title-display" class="text-lg sm:text-xl font-bold text-slate-900">Chi Tiết Buổi Chơi & Sổ Quỹ</h2>
+            <p id="session-info-display" class="text-xs text-slate-500 font-medium">Buổi thi đấu CLB Pickleball Văn Quán</p>
           </div>
         </div>
 
-        <!-- Session Summary Cards -->
-        <div id="session-summary-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-          <!-- Populated dynamically -->
+        <!-- Dropdown Session Selector -->
+        <div class="flex items-center space-x-2">
+          <div class="relative">
+            <select id="session-select" onchange="App.selectSession(this.value)" class="appearance-none bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-xs sm:text-sm rounded-xl py-2 pl-3.5 pr-9 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm">
+              <!-- Populated dynamically -->
+            </select>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          </div>
         </div>
       </div>
 
-      <!-- Financial Split Table (Bảng tính tiền từng thành viên) -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden space-y-3 p-4 sm:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-          <div>
-            <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
-              <span>💰 Bảng Thanh Toán Từng Thành Viên</span>
-            </h3>
+      <!-- 2 CỘT: TRÁI (Bảng chia tiền) & PHẢI (Chi phí buổi chơi) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- CỘT TRÁI: BẢNG CHIA TIỀN (8 Cột) -->
+        <div class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden p-4 sm:p-6 space-y-4">
+          <div class="flex items-center justify-between gap-2 pb-2">
+            <div>
+              <h3 class="text-xl font-bold text-slate-900 tracking-tight">Bảng chia tiền</h3>
+              <p class="text-xs text-slate-400 font-medium mt-0.5">Thua ít đứng trước · bằng thua, thắng nhiều đứng trước</p>
+            </div>
+            <div>
+              <button onclick="App.copyZaloSummary()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold shadow-sm transition">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span>Sao chép</span>
+              </button>
+            </div>
           </div>
-          <div class="text-right">
-            <span class="text-xs text-slate-500">Tổng chi phí buổi:</span>
-            <div id="session-total-cost-badge" class="text-lg font-extrabold text-emerald-600">2.423.000 đ</div>
+
+          <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <table class="w-full text-left text-sm text-slate-600 border-collapse">
+              <thead>
+                <tr class="text-xs font-medium text-slate-400 border-b border-slate-100">
+                  <th scope="col" class="py-3 px-3 text-left">Người chơi</th>
+                  <th scope="col" class="py-3 px-2 text-center">Trận</th>
+                  <th scope="col" class="py-3 px-2 text-center text-emerald-700">Thắng</th>
+                  <th scope="col" class="py-3 px-2 text-center">Thua</th>
+                  <th scope="col" class="py-3 px-3 text-right">Tiền thua</th>
+                  <th scope="col" class="py-3 px-3 text-right">Độ thêm</th>
+                  <th scope="col" class="py-3 px-3 text-right">Tiền Pick</th>
+                  <th scope="col" class="py-3 px-3 text-right">Tiền bia</th>
+                  <th scope="col" class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-slate-700">Tổng đóng</th>
+                  <th scope="col" class="py-3 px-2 text-center">Đã TT</th>
+                </tr>
+              </thead>
+              <tbody id="session-finances-tbody" class="divide-y divide-slate-100/80 font-normal">
+                <!-- Rendered dynamically -->
+              </tbody>
+              <tfoot id="session-finances-tfoot" class="border-t-2 border-slate-200 text-xs font-bold text-slate-700 bg-slate-50/60">
+                <!-- Rendered dynamically -->
+              </tfoot>
+            </table>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-600">
-            <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 tracking-wider border-y border-slate-200">
-              <tr>
-                <th scope="col" class="py-3 px-3">Tên Thành Viên</th>
-                <th scope="col" class="py-3 px-3 text-center">Số Trận</th>
-                <th scope="col" class="py-3 px-3 text-center text-emerald-700">Thắng</th>
-                <th scope="col" class="py-3 px-3 text-center text-rose-700">Thua</th>
-                <th scope="col" class="py-3 px-3 text-right">Tiền Thua (10k)</th>
-                <th scope="col" class="py-3 px-3 text-right">Tiền Pick</th>
-                <th scope="col" class="py-3 px-3 text-right">Tiền Bia</th>
-                <th scope="col" class="py-3 px-4 text-right bg-emerald-50/60 font-black text-slate-900">Tổng Cuối Phải Đóng</th>
-                <th scope="col" class="py-3 px-3 text-center">Đã Thanh Toán</th>
-              </tr>
-            </thead>
-            <tbody id="session-finances-tbody" class="divide-y divide-slate-100 font-medium">
-              <!-- Rendered dynamically -->
-            </tbody>
-            <tfoot id="session-finances-tfoot" class="bg-slate-100/90 font-bold text-xs uppercase text-slate-700 border-t-2 border-slate-300">
-              <!-- Rendered dynamically -->
-            </tfoot>
-          </table>
+        <!-- CỘT PHẢI: CHI PHÍ BUỔI CHƠI (4 Cột) -->
+        <div class="lg:col-span-4 lg:sticky lg:top-20">
+          <div id="session-cost-summary-card" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 space-y-4">
+            <!-- Rendered dynamically -->
+          </div>
         </div>
+
       </div>
 
       <!-- Match Results Table (Bảng kết quả các trận đấu đôi) -->

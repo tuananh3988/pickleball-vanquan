@@ -106,8 +106,8 @@ window.Calculator = {
       };
     });
 
-    // Sắp xếp danh sách người chơi theo thứ tự trong file: Win rate cao -> thấp, hoặc theo số tiền
-    playerRows.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+    // Sắp xếp danh sách người chơi theo quy tắc: Thua ít đứng trước · bằng thua, thắng nhiều đứng trước
+    playerRows.sort((a, b) => a.losses - b.losses || b.wins - a.wins || b.matches - a.matches);
 
     // Tính tổng kiểm tra
     const totalCalculatedFinal = playerRows.reduce((sum, r) => sum + r.totalFinal, 0);
@@ -360,14 +360,14 @@ window.Calculator = {
   },
 
   /**
-   * Định dạng tiền tệ VNĐ (ví dụ: 291.340 đ hoặc dạng k)
+   * Định dạng tiền tệ VNĐ (ví dụ: 291.338đ hoặc dạng k)
    */
   formatCurrency(amount, inThousands = false) {
-    if (amount === undefined || amount === null || isNaN(amount)) return "0 đ";
+    if (amount === undefined || amount === null || isNaN(amount)) return "0đ";
     if (inThousands) {
       return (amount / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + "k";
     }
-    return Math.round(amount).toLocaleString('vi-VN') + " đ";
+    return Math.round(amount).toLocaleString('vi-VN') + "đ";
   }
 };
 

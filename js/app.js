@@ -350,7 +350,73 @@ window.App = {
   },
 
   /**
-   * Render Chi Tiết Buổi Chơi (Summary, Financials Table & Matches Grid)
+   * Tạo Avatar viết tắt và màu sắc pastel cho từng VĐV
+   */
+  getPlayerAvatar(name) {
+    if (!name) return { initials: '?', bgClass: 'bg-stone-200 text-stone-700' };
+    const trimmed = name.trim();
+    let initials = '';
+
+    // Khởi tạo chữ viết tắt tương ứng theo ảnh mẫu của CLB
+    if (trimmed === 'Tùng nhỏ') initials = 'Tn';
+    else if (trimmed === 'Luân') initials = 'L';
+    else if (trimmed === 'Đạt') initials = 'Đ';
+    else if (trimmed === 'Tuấn Anh') initials = 'TA';
+    else if (trimmed === 'Khiêm') initials = 'K';
+    else if (trimmed === 'Tuấn') initials = 'T';
+    else if (trimmed === 'Tùng trọc') initials = 'Tt';
+    else if (trimmed === 'HAnh') initials = 'HA';
+    else if (trimmed === 'Tùng lớn') initials = 'TL';
+    else if (trimmed === 'Cường') initials = 'C';
+    else if (trimmed === 'Bình') initials = 'B';
+    else {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length === 1) initials = parts[0].charAt(0).toUpperCase();
+      else initials = parts[0].charAt(0).toUpperCase() + parts[parts.length - 1].charAt(0);
+    }
+
+    // Bảng màu pastel nhẹ nhàng đồng bộ với ảnh
+    const colorMap = {
+      'Tùng nhỏ': 'bg-[#e2e8dd] text-[#3d5236]',
+      'Luân': 'bg-[#fae5d9] text-[#9c4d21]',
+      'Đạt': 'bg-[#e3e8ea] text-[#37525a]',
+      'Tuấn Anh': 'bg-[#e4ebf5] text-[#294c74]',
+      'Khiêm': 'bg-[#e1e9df] text-[#395636]',
+      'Tuấn': 'bg-[#fae6dd] text-[#974e2d]',
+      'Tùng trọc': 'bg-[#e4e7e2] text-[#42523f]',
+      'HAnh': 'bg-[#e6e2f5] text-[#48378a]',
+      'Tùng lớn': 'bg-[#fceadc] text-[#924b1f]',
+      'Cường': 'bg-[#e2ecf2] text-[#27536d]',
+      'Bình': 'bg-[#e7f0e4] text-[#2f6128]'
+    };
+
+    const bgClass = colorMap[trimmed] || 'bg-stone-200 text-stone-700';
+    return { initials, bgClass };
+  },
+
+  /**
+   * Mở hoặc chỉnh liên kết Google Sheets của CLB
+   */
+  openGoogleSheet() {
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
+    const session = sessions.find(s => s.id === this.currentSessionId) || sessions[0];
+    if (session && session.googleSheetUrl) {
+      window.open(session.googleSheetUrl, '_blank');
+      return;
+    }
+    const input = prompt(
+      "Dán liên kết Google Sheets của CLB Pickleball Văn Quán:",
+      "https://docs.google.com/spreadsheets/"
+    );
+    if (input && input.trim().startsWith("http")) {
+      if (session) session.googleSheetUrl = input.trim();
+      window.open(input.trim(), '_blank');
+      this.showToast("Đã lưu liên kết Google Sheets cho buổi đấu này!");
+    }
+  },
+
+  /**
+   * Render Chi Tiết Buổi Chơi (2 Cột: Bảng chia tiền & Chi phí buổi chơi + Matches Grid)
    */
   renderSessionDetail() {
     const sessions = window.PICKLEBALL_DATA.sessions || [];
@@ -362,69 +428,104 @@ window.App = {
 
     const { playerRows, summary } = res;
 
-    // 1. Render Summary Cards
-    const summaryCards = document.getElementById('session-summary-cards');
-    if (summaryCards) {
-      summaryCards.innerHTML = `
-        <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
-          <p class="text-[11px] font-bold text-slate-400 uppercase">Tiền Sân + Nước + Bóng</p>
-          <p class="text-base sm:text-lg font-black text-slate-900 mt-0.5">${Calculator.formatCurrency(summary.totalPickExpense)}</p>
-          <p class="text-[10px] text-slate-500">Sân ${summary.court/1000}k + Nước ${summary.water/1000}k + Bóng ${summary.balls/1000}k</p>
+    // Cập nhật tiêu đề & ngày đấu
+    const titleDisplay = document.getElementById('session-title-display');
+    const infoDisplay = document.getElementById('session-info-display');
+    if (titleDisplay) titleDisplay.textContent = session.name || "Chi Tiết Buổi Chơi";
+    if (infoDisplay) infoDisplay.textContent = `${session.date || ''} · ${session.location || 'Sân Pickleball Văn Quán'}`;
+
+    // 1. CỘT PHẢI: Render Card "Chi phí buổi chơi" (Chính xác như ảnh mẫu)
+    const costCard = document.getElementById('session-cost-summary-card');
+    if (costCard) {
+      costCard.innerHTML = `
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight">Chi phí buổi chơi</h3>
+          <p class="text-xs text-slate-400 font-medium mt-0.5">Theo bảng tính của buổi chơi</p>
         </div>
-        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3">
-          <p class="text-[11px] font-bold text-amber-700 uppercase">Tiền Bia (${summary.beerCount} người đi)</p>
-          <p class="text-base sm:text-lg font-black text-amber-900 mt-0.5">${Calculator.formatCurrency(summary.totalBeerExpense)}</p>
-          <p class="text-[10px] text-amber-700/80">Chia đều: ${Calculator.formatCurrency(summary.beerPerPerson, true)}/người</p>
+
+        <div class="space-y-3 pt-1 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-normal">Tiền sân</span>
+            <span class="font-bold text-slate-900">${Calculator.formatCurrency(summary.court)}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-normal">Tiền nước</span>
+            <span class="font-bold text-slate-900">${Calculator.formatCurrency(summary.water)}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-normal">Tiền bóng</span>
+            <span class="font-bold text-slate-900">${Calculator.formatCurrency(summary.balls)}</span>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100"></div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-normal">Mỗi lượt thua</span>
+            <span class="font-bold text-slate-900">${Calculator.formatCurrency(session.lossPenaltyRate || 10000)}</span>
+          </div>
+
+          <!-- Khung nổi bật: Sân nước bóng – tiền thua -->
+          <div class="bg-[#f4f6ee] border border-stone-200/70 rounded-2xl p-4 space-y-1">
+            <div class="text-xs text-slate-500 font-medium">Sân nước bóng – tiền thua</div>
+            <div class="text-base font-extrabold text-slate-900 tracking-tight">
+              ${Calculator.formatCurrency(summary.totalPickExpense)} – ${Calculator.formatCurrency(summary.totalLossPenalty)}
+            </div>
+            <div class="text-xs text-slate-500 font-medium">
+              Chia đều cho ${summary.totalPlayers} người
+            </div>
+          </div>
+
+          <!-- Tiền bia -->
+          <div class="pt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-normal">Tiền bia</span>
+              <span class="font-bold text-slate-900">${Calculator.formatCurrency(summary.totalBeerExpense)}</span>
+            </div>
+            <div class="text-xs text-slate-400 mt-1">
+              ${summary.beerCount} người đi bia · ${Calculator.formatCurrency(summary.beerPerPerson)}/người
+            </div>
+          </div>
         </div>
-        <div class="bg-rose-50/60 border border-rose-200/80 rounded-xl p-3">
-          <p class="text-[11px] font-bold text-rose-700 uppercase">Tiền Thua Thu Được</p>
-          <p class="text-base sm:text-lg font-black text-rose-900 mt-0.5">${Calculator.formatCurrency(summary.totalLossPenalty)}</p>
-          <p class="text-[10px] text-rose-700/80">Phạt 10k/trận thua bù vào tiền sân</p>
-        </div>
-        <div class="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3">
-          <p class="text-[11px] font-bold text-emerald-700 uppercase">Pick Còn Lại Chia Đều</p>
-          <p class="text-base sm:text-lg font-black text-emerald-900 mt-0.5">${Calculator.formatCurrency(summary.pickPerPerson, true)}</p>
-          <p class="text-[10px] text-emerald-700/80">(${Calculator.formatCurrency(summary.remainingPickExpense, true)} chia ${summary.totalPlayers} người)</p>
+
+        <!-- Nút thao tác Google Sheets -->
+        <div class="pt-2">
+          <button onclick="App.openGoogleSheet()" class="w-full py-2.5 px-4 rounded-xl bg-[#f4f7f0] hover:bg-[#e9eee4] border border-stone-200/80 text-slate-700 text-xs font-semibold flex items-center justify-center space-x-2 transition duration-150 shadow-sm cursor-pointer">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-700"></i>
+            <span>Chỉnh dữ liệu trên Google Sheets</span>
+          </button>
         </div>
       `;
     }
 
-    // Badge tổng chi phí
-    const totalBadge = document.getElementById('session-total-cost-badge');
-    if (totalBadge) totalBadge.textContent = Calculator.formatCurrency(summary.totalAllExpenses);
-
-    // 2. Render Financial Split Table
+    // 2. CỘT TRÁI: Render Bảng chia tiền (Financial Split Table)
     const tbody = document.getElementById('session-finances-tbody');
     if (tbody) {
       tbody.innerHTML = playerRows.map(p => {
+        const avatar = this.getPlayerAvatar(p.name);
         return `
-          <tr class="hover:bg-slate-50 transition">
+          <tr class="hover:bg-slate-50/70 transition">
             <td class="py-3 px-3">
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center space-x-2.5">
+                <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${avatar.bgClass}">
+                  ${avatar.initials}
+                </span>
                 <span class="font-bold text-slate-900">${p.name}</span>
-                ${p.isBeer ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800">🍻 Đi bia</span>' : ''}
               </div>
             </td>
-            <td class="py-3 px-3 text-center font-bold text-slate-800">${p.matches}</td>
-            <td class="py-3 px-3 text-center font-bold text-emerald-600">${p.wins}</td>
-            <td class="py-3 px-3 text-center font-bold text-rose-500">${p.losses}</td>
-            <td class="py-3 px-3 text-right text-xs text-rose-600 font-semibold">${Calculator.formatCurrency(p.lossPenalty, true)}</td>
-            <td class="py-3 px-3 text-right text-xs font-semibold text-slate-700">${Calculator.formatCurrency(p.pickCost, true)}</td>
-            <td class="py-3 px-3 text-right text-xs font-semibold ${p.isBeer ? 'text-amber-700' : 'text-slate-300'}">
-              ${p.isBeer ? Calculator.formatCurrency(p.beerCost, true) : '-'}
-            </td>
-            <td class="py-3 px-4 text-right bg-emerald-50/50 font-black text-sm text-emerald-800">
-              ${Calculator.formatCurrency(p.totalFinal, true)}
-              <span class="block text-[10px] text-slate-400 font-normal">(${Calculator.formatCurrency(p.totalFinal)})</span>
-            </td>
-            <td class="py-3 px-3 text-center">
+            <td class="py-3 px-2 text-center text-slate-600 font-normal">${p.matches}</td>
+            <td class="py-3 px-2 text-center font-bold text-[#1f6838]">${p.wins}</td>
+            <td class="py-3 px-2 text-center text-slate-600 font-normal">${p.losses}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm">${Calculator.formatCurrency(p.lossPenalty)}</td>
+            <td class="py-3 px-3 text-right text-slate-400 font-normal text-xs sm:text-sm">${Calculator.formatCurrency(p.extraBet || 0)}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm">${Calculator.formatCurrency(p.pickCost)}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm">${p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—'}</td>
+            <td class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-[#143d25] text-xs sm:text-sm">${Calculator.formatCurrency(p.totalFinal)}</td>
+            <td class="py-3 px-2 text-center">
               ${p.isPaid
-                ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    ✓ Đã đóng
+                ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ok
                   </span>`
-                : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-400">
-                    Chưa đóng
-                  </span>`
+                : `<span class="text-slate-300 text-xs font-medium">—</span>`
               }
             </td>
           </tr>
@@ -436,21 +537,17 @@ window.App = {
     const tfoot = document.getElementById('session-finances-tfoot');
     if (tfoot) {
       tfoot.innerHTML = `
-        <tr>
-          <td class="py-3 px-3 font-black text-slate-900">TỔNG CỘNG</td>
-          <td class="py-3 px-3 text-center font-black">${summary.totalMatches * 4} lượt</td>
-          <td class="py-3 px-3 text-center text-emerald-700 font-black">${summary.totalMatches * 2}</td>
-          <td class="py-3 px-3 text-center text-rose-700 font-black">${summary.totalMatches * 2}</td>
-          <td class="py-3 px-3 text-right font-black text-rose-700">${Calculator.formatCurrency(summary.totalLossPenalty, true)}</td>
-          <td class="py-3 px-3 text-right font-black text-slate-900">${Calculator.formatCurrency(summary.totalPickExpense, true)}</td>
-          <td class="py-3 px-3 text-right font-black text-amber-800">${Calculator.formatCurrency(summary.totalBeerExpense, true)}</td>
-          <td class="py-3 px-4 text-right bg-emerald-100/70 font-black text-sm text-emerald-950">
-            ${Calculator.formatCurrency(summary.totalAllExpenses, true)}
-            <span class="block text-[10px] text-emerald-800 font-bold">(${Calculator.formatCurrency(summary.totalAllExpenses)})</span>
-          </td>
-          <td class="py-3 px-3 text-center font-black text-xs ${summary.totalPaidCount === summary.totalPlayers ? 'text-emerald-700' : 'text-slate-600'}">
-            ${summary.totalPaidCount}/${summary.totalPlayers} đã đóng
-          </td>
+        <tr class="font-bold text-slate-800">
+          <td class="py-3 px-3 text-slate-900">Tổng cộng</td>
+          <td class="py-3 px-2 text-center">${summary.totalMatches * 4}</td>
+          <td class="py-3 px-2 text-center text-[#1f6838]">${summary.totalMatches * 2}</td>
+          <td class="py-3 px-2 text-center">${summary.totalMatches * 2}</td>
+          <td class="py-3 px-3 text-right">${Calculator.formatCurrency(summary.totalLossPenalty)}</td>
+          <td class="py-3 px-3 text-right text-slate-400">0đ</td>
+          <td class="py-3 px-3 text-right">${Calculator.formatCurrency(summary.totalPickExpense)}</td>
+          <td class="py-3 px-3 text-right">${Calculator.formatCurrency(summary.totalBeerExpense)}</td>
+          <td class="py-3 px-3 text-right bg-[#f1f3ec] text-[#143d25] font-black">${Calculator.formatCurrency(summary.totalAllExpenses)}</td>
+          <td class="py-3 px-2 text-center text-xs text-emerald-700 font-bold">${summary.totalPaidCount}/${summary.totalPlayers}</td>
         </tr>
       `;
     }
@@ -606,14 +703,15 @@ window.App = {
     text += `🏟️ Sân + Nước + Bóng: ${Calculator.formatCurrency(summary.totalPickExpense)}\n`;
     text += `🍻 Tiền Bia (${summary.beerCount} người): ${Calculator.formatCurrency(summary.totalBeerExpense)}\n`;
     text += `💰 Phạt thua (10k/trận): ${Calculator.formatCurrency(summary.totalLossPenalty)}\n`;
-    text += `👉 Pick còn lại chia đều: ${Calculator.formatCurrency(summary.pickPerPerson, true)}/người\n`;
-    text += `👉 Bia chia đều: ${Calculator.formatCurrency(summary.beerPerPerson, true)}/người\n`;
+    text += `👉 Pick còn lại chia đều: ${Calculator.formatCurrency(summary.pickPerPerson)}/người\n`;
+    text += `👉 Bia chia đều: ${Calculator.formatCurrency(summary.beerPerPerson)}/người\n`;
     text += `--------------------------------------\n`;
     text += `📋 DANH SÁCH THANH TOÁN TỪNG ANH EM:\n\n`;
 
     playerRows.forEach((p, idx) => {
-      const beerText = p.isBeer ? ` + Bia: ${Calculator.formatCurrency(p.beerCost, true)}` : '';
-      text += `${idx + 1}. ${p.name} (${p.matches} trận, ${p.wins}T-${p.losses}B): ${Calculator.formatCurrency(p.totalFinal, true)} (Pick: ${Calculator.formatCurrency(p.pickCost, true)}${beerText})\n`;
+      const beerText = p.isBeer ? ` + Bia: ${Calculator.formatCurrency(p.beerCost)}` : '';
+      const paidStatus = p.isPaid ? ' (✓ Đã thanh toán)' : '';
+      text += `${idx + 1}. ${p.name} (${p.matches} trận, ${p.wins}T-${p.losses}B): ${Calculator.formatCurrency(p.totalFinal)} [Pick: ${Calculator.formatCurrency(p.pickCost)}${beerText}]${paidStatus}\n`;
     });
 
     text += `\n💵 TỔNG CỘNG CẢ BUỔI: ${Calculator.formatCurrency(summary.totalAllExpenses)}\n`;
