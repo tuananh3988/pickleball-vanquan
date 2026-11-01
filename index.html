@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pickleball Văn Quán - Bảng Xếp Hạng & Sổ Quỹ Thi Đấu</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pickle: {
+              50: '#f7fee7',
+              100: '#ecfccb',
+              200: '#d9f99d',
+              300: '#bef264',
+              400: '#a3e635',
+              500: '#84cc16',
+              600: '#65a30d',
+              700: '#4d7c0f',
+              800: '#3f6212',
+              900: '#365314',
+            },
+            court: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+              950: '#042f2e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-gradient-to-r from-court-950 via-slate-900 to-court-900 text-white shadow-xl sticky top-0 z-50 border-b border-court-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pickle-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-pickle-500/20 text-slate-950 font-black text-2xl transform hover:rotate-6 transition duration-200">
+            🎾
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-pickle-100 to-pickle-300 bg-clip-text text-transparent">
+                PICKLEBALL VĂN QUÁN
+              </h1>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-pickle-400/20 text-pickle-300 border border-pickle-400/30">
+                PRO
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 font-medium">Bảng Xếp Hạng Đôi & Sổ Quỹ Buổi Đấu</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Tabs -->
+        <nav class="hidden md:flex items-center space-x-2 bg-slate-800/60 p-1.5 rounded-xl border border-slate-700/60 backdrop-blur-md">
+          <button id="nav-leaderboard" onclick="App.switchTab('leaderboard')" class="tab-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 bg-pickle-400 text-slate-950 shadow-md">
+            <i data-lucide="trophy" class="w-4 h-4"></i>
+            <span>Bảng Xếp Hạng</span>
+          </button>
+          <button id="nav-sessions" onclick="App.switchTab('sessions')" class="tab-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+            <span>Chi Tiết Buổi Chơi</span>
+          </button>
+          <button id="nav-pairs" onclick="App.switchTab('pairs')" class="tab-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Cặp Đôi Ăn Ý</span>
+          </button>
+        </nav>
+
+        <!-- Right Quick Info -->
+        <div class="hidden lg:flex items-center space-x-3 text-xs text-slate-300">
+          <div class="flex items-center space-x-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+            <i data-lucide="badge-percent" class="w-4 h-4 text-pickle-400"></i>
+            <span>Phạt thua: <strong class="text-white">10k/trận</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation Bar (Bottom on Mobile) -->
+      <div class="md:hidden flex border-t border-slate-800/80 py-2 justify-around">
+        <button onclick="App.switchTab('leaderboard')" class="mobile-tab-btn flex flex-col items-center py-1 px-3 text-xs font-bold text-pickle-400" data-tab="leaderboard">
+          <i data-lucide="trophy" class="w-5 h-5 mb-1"></i>
+          <span>Xếp Hạng</span>
+        </button>
+        <button onclick="App.switchTab('sessions')" class="mobile-tab-btn flex flex-col items-center py-1 px-3 text-xs font-semibold text-slate-400" data-tab="sessions">
+          <i data-lucide="calendar" class="w-5 h-5 mb-1"></i>
+          <span>Buổi Đấu & Tiền</span>
+        </button>
+        <button onclick="App.switchTab('pairs')" class="mobile-tab-btn flex flex-col items-center py-1 px-3 text-xs font-semibold text-slate-400" data-tab="pairs">
+          <i data-lucide="users" class="w-5 h-5 mb-1"></i>
+          <span>Cặp Đôi</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- ========================================== -->
+    <!-- SECTION 1: BẢNG XẾP HẠNG & THỐNG KÊ (LEADERBOARD) -->
+    <!-- ========================================== -->
+    <section id="section-leaderboard" class="space-y-6">
+      
+      <!-- Top Bar: Title & Time Filters -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-pickle-100 text-pickle-800 rounded-xl">
+                <i data-lucide="award" class="w-6 h-6"></i>
+              </span>
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Bảng Xếp Hạng VĐV</h2>
+                <p class="text-xs sm:text-sm text-slate-500">Sắp xếp ưu tiên: <span class="font-semibold text-slate-700">Tỉ lệ Thắng (%)</span> rồi đến <span class="font-semibold text-slate-700">Tổng số trận đã đấu</span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Time Range Filter Pills -->
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium">
+            <button onclick="App.setTimeFilter('all')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 bg-white text-slate-900 font-bold shadow-sm" data-filter="all">
+              Tất cả
+            </button>
+            <button onclick="App.setTimeFilter('year')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="year">
+              Năm 2026
+            </button>
+            <button onclick="App.setTimeFilter('quarter')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="quarter">
+              Quý 4
+            </button>
+            <button onclick="App.setTimeFilter('month')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="month">
+              Tháng 11
+            </button>
+            <button onclick="App.setTimeFilter('week')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="week">
+              Tuần này
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Context Bar & Search -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
+            <span id="current-filter-label" class="font-semibold text-slate-700">Đang xem: Toàn thời gian (All-time)</span>
+            <span class="text-slate-300">•</span>
+            <span id="stats-matches-count">17 trận đấu</span>
+          </div>
+
+          <!-- Search Player Input -->
+          <div class="relative w-full sm:w-64">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="leaderboard-search" oninput="App.filterLeaderboardSearch(this.value)" placeholder="Tìm kiếm VĐV..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pickle-400 focus:bg-white transition">
+          </div>
+        </div>
+      </div>
+
+      <!-- Top 3 Podium (Cards) -->
+      <div id="podium-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+      <!-- Full Leaderboard Table -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-100/80 text-xs uppercase font-bold text-slate-500 tracking-wider border-b border-slate-200">
+              <tr>
+                <th scope="col" class="py-3.5 px-4 text-center w-16">Hạng</th>
+                <th scope="col" class="py-3.5 px-4">Vận Động Viên</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Số Trận</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Thắng - Thua</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Tỉ Lệ Thắng</th>
+                <th scope="col" class="py-3.5 px-4 text-center hidden sm:table-cell">Điểm (Ghi - Mất)</th>
+                <th scope="col" class="py-3.5 px-4 text-center hidden md:table-cell">Hiệu Số</th>
+                <th scope="col" class="py-3.5 px-4 text-center hidden lg:table-cell">Phong Độ Gần Đây</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Chuỗi</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody" class="divide-y divide-slate-100 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 2: CHI TIẾT TỪNG BUỔI CHƠI (SESSIONS & TIỀN SÂN/BIA) -->
+    <!-- ========================================== -->
+    <section id="section-sessions" class="hidden space-y-6">
+      
+      <!-- Session Selector & Quick Actions -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+                <i data-lucide="receipt" class="w-6 h-6"></i>
+              </span>
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Chi Tiết Buổi Chơi & Sổ Quỹ</h2>
+                <p class="text-xs sm:text-sm text-slate-500">Xem kết quả từng trận đôi, tiền phạt thua (10k/trận) & chia tiền Sân, Nước, Bóng, Bia</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dropdown Session Selector & Copy Button -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <select id="session-select" onchange="App.selectSession(this.value)" class="appearance-none bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-sm rounded-xl py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-pickle-400 cursor-pointer shadow-sm">
+                <!-- Populated dynamically -->
+              </select>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+
+            <!-- Copy to Zalo Button -->
+            <button onclick="App.copyZaloSummary()" class="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition">
+              <i data-lucide="clipboard-copy" class="w-4 h-4"></i>
+              <span>Sao Chép Bảng Tiền Gửi Zalo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Session Summary Cards -->
+        <div id="session-summary-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Financial Split Table (Bảng tính tiền từng thành viên giống hệt Google Sheet) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden space-y-3 p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <span>💰 Bảng Thanh Toán Từng Thành Viên</span>
+              <span class="text-xs font-normal text-slate-400">(Quy tắc tính chuẩn khớp file Sheet)</span>
+            </h3>
+            <p class="text-xs text-slate-500">Mỗi trận thua nộp 10k $\rightarrow$ bù vào tiền Sân/Nước/Bóng $\rightarrow$ phần còn lại chia đều $\rightarrow$ cộng tiền Bia (nếu có)</p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-500">Tổng chi phí buổi:</span>
+            <div id="session-total-cost-badge" class="text-lg font-extrabold text-emerald-600">2.423.000 đ</div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 tracking-wider border-y border-slate-200">
+              <tr>
+                <th scope="col" class="py-3 px-3">Tên Thành Viên</th>
+                <th scope="col" class="py-3 px-3 text-center">Số Trận</th>
+                <th scope="col" class="py-3 px-3 text-center text-emerald-700">Thắng</th>
+                <th scope="col" class="py-3 px-3 text-center text-rose-700">Thua</th>
+                <th scope="col" class="py-3 px-3 text-right">Tiền Thua (10k)</th>
+                <th scope="col" class="py-3 px-3 text-right">Tiền Pick</th>
+                <th scope="col" class="py-3 px-3 text-right">Tiền Bia</th>
+                <th scope="col" class="py-3 px-4 text-right bg-emerald-50/60 font-black text-slate-900">Tổng Cuối Phải Đóng</th>
+              </tr>
+            </thead>
+            <tbody id="session-finances-tbody" class="divide-y divide-slate-100 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+            <tfoot id="session-finances-tfoot" class="bg-slate-100/90 font-bold text-xs uppercase text-slate-700 border-t-2 border-slate-300">
+              <!-- Rendered dynamically -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Match Results Table (Bảng kết quả các trận đấu đôi A - D) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden p-4 sm:p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+              <span>🏸 Kết Quả Các Trận Đôi Buổi Này</span>
+            </h3>
+            <p class="text-xs text-slate-500">Danh sách các trận đấu đôi theo thứ tự thi đấu</p>
+          </div>
+
+          <!-- Filter Match by Player -->
+          <div class="relative w-full sm:w-56">
+            <select id="match-player-filter" onchange="App.filterMatchesByPlayer(this.value)" class="w-full bg-slate-50 border border-slate-300 text-xs font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-pickle-400">
+              <option value="">Tất cả VĐV</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div id="matches-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- SECTION 3: CẶP ĐÔI ĂN Ý (DOUBLES PARTNERSHIPS) -->
+    <!-- ========================================== -->
+    <section id="section-pairs" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
+        <div class="flex items-center space-x-2">
+          <span class="p-2 bg-indigo-100 text-indigo-800 rounded-xl">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </span>
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Cặp Đôi Ăn Ý Nhất</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Thống kê các bộ đôi thi đấu cùng nhau: Số trận, chiến thắng và tỉ lệ ăn ý (%)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-100/80 text-xs uppercase font-bold text-slate-500 tracking-wider border-b border-slate-200">
+              <tr>
+                <th scope="col" class="py-3.5 px-4 text-center w-16">Hạng</th>
+                <th scope="col" class="py-3.5 px-4">Cặp Đôi (Bộ đôi)</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Số Trận Đã Đấu</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Thắng - Thua</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Tỉ Lệ Thắng (%)</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Đánh Giá</th>
+              </tr>
+            </thead>
+            <tbody id="pairs-tbody" class="divide-y divide-slate-100 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 border border-slate-700">
+      <i data-lucide="check-circle-2" class="w-5 h-5 text-pickle-400"></i>
+      <span id="toast-message">Đã sao chép thành công!</span>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 space-y-1">
+      <p class="font-bold text-slate-600">PICKLEBALL VĂN QUÁN • 2026</p>
+      <p>Hệ thống tự động thống kê kết quả thi đấu & sổ quỹ tài chính minh bạch cho các thành viên.</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="js/data.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
