@@ -498,24 +498,24 @@ window.App = {
     if (tbody) {
       tbody.innerHTML = playerRows.map(p => {
         return `
-          <tr class="hover:bg-slate-50/70 transition">
-            <td class="py-3 px-3">
-              <div class="flex items-center space-x-2">
+          <tr class="hover:bg-slate-50/70 transition group">
+            <td class="py-3 px-3 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-100 min-w-[125px] sm:min-w-[140px] whitespace-nowrap">
+              <div class="flex items-center space-x-1.5 whitespace-nowrap">
                 <span class="font-bold text-slate-900">${p.name}</span>
-                ${p.isBeer ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200/60">🍻 Đi bia</span>' : ''}
+                ${p.isBeer ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200/60 whitespace-nowrap flex-shrink-0">🍻 Đi bia</span>' : ''}
               </div>
             </td>
-            <td class="py-3 px-2 text-center text-slate-600 font-normal">${p.matches}</td>
-            <td class="py-3 px-2 text-center font-bold text-[#1f6838]">${p.wins}</td>
-            <td class="py-3 px-2 text-center text-slate-600 font-normal">${p.losses}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm">${Calculator.formatCurrency(p.lossPenalty)}</td>
-            <td class="py-3 px-3 text-right text-slate-400 font-normal text-xs sm:text-sm">${Calculator.formatCurrency(p.extraBet || 0)}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm">${Calculator.formatCurrency(p.pickCost)}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm">${p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—'}</td>
-            <td class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-[#143d25] text-xs sm:text-sm">${Calculator.formatCurrency(p.totalFinal)}</td>
-            <td class="py-3 px-2 text-center">
+            <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.matches}</td>
+            <td class="py-3 px-2 text-center font-bold text-[#1f6838] whitespace-nowrap">${p.wins}</td>
+            <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.losses}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.lossPenalty)}</td>
+            <td class="py-3 px-3 text-right text-slate-400 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.extraBet || 0)}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.pickCost)}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—'}</td>
+            <td class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-[#143d25] text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.totalFinal)}</td>
+            <td class="py-3 px-2 text-center whitespace-nowrap">
               ${p.isPaid
-                ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
                     ok
                   </span>`
                 : `<span class="text-slate-300 text-xs font-medium">—</span>`
@@ -531,16 +531,16 @@ window.App = {
     if (tfoot) {
       tfoot.innerHTML = `
         <tr class="font-bold text-slate-800">
-          <td class="py-3 px-3 text-slate-900">Tổng cộng</td>
-          <td class="py-3 px-2 text-center">${summary.totalMatches * 4}</td>
-          <td class="py-3 px-2 text-center text-[#1f6838]">${summary.totalMatches * 2}</td>
-          <td class="py-3 px-2 text-center">${summary.totalMatches * 2}</td>
-          <td class="py-3 px-3 text-right">${Calculator.formatCurrency(summary.totalLossPenalty)}</td>
-          <td class="py-3 px-3 text-right text-slate-400">0đ</td>
-          <td class="py-3 px-3 text-right">${Calculator.formatCurrency(summary.totalPickExpense)}</td>
-          <td class="py-3 px-3 text-right">${Calculator.formatCurrency(summary.totalBeerExpense)}</td>
-          <td class="py-3 px-3 text-right bg-[#f1f3ec] text-[#143d25] font-black">${Calculator.formatCurrency(summary.totalAllExpenses)}</td>
-          <td class="py-3 px-2 text-center text-xs text-emerald-700 font-bold">${summary.totalPaidCount}/${summary.totalPlayers}</td>
+          <td class="py-3 px-3 sticky left-0 bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-200 min-w-[125px] sm:min-w-[140px] text-slate-900 whitespace-nowrap">Tổng cộng</td>
+          <td class="py-3 px-2 text-center whitespace-nowrap">${summary.totalMatches * 4}</td>
+          <td class="py-3 px-2 text-center text-[#1f6838] whitespace-nowrap">${summary.totalMatches * 2}</td>
+          <td class="py-3 px-2 text-center whitespace-nowrap">${summary.totalMatches * 2}</td>
+          <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalLossPenalty)}</td>
+          <td class="py-3 px-3 text-right text-slate-400 whitespace-nowrap">0đ</td>
+          <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalPickExpense)}</td>
+          <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalBeerExpense)}</td>
+          <td class="py-3 px-3 text-right bg-[#f1f3ec] text-[#143d25] font-black whitespace-nowrap">${Calculator.formatCurrency(summary.totalAllExpenses)}</td>
+          <td class="py-3 px-2 text-center text-xs text-emerald-700 font-bold whitespace-nowrap">${summary.totalPaidCount}/${summary.totalPlayers}</td>
         </tr>
       `;
     }
