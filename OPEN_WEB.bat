@@ -1,0 +1,3 @@
+@echo off
+echo Dang mo trang web Pickleball Van Quan tren trinh duyet...
+start "" "%~dp0index.html"
