@@ -25,6 +25,10 @@ window.PICKLEBALL_DATA = {
       beerParticipants: [
         "Đạt", "Tuấn Anh", "Khiêm", "Tuấn", "HAnh", "Cường", "Bình"
       ],
+      // Danh sách thành viên đã thanh toán tiền buổi này
+      paidMembers: [
+        "Tùng nhỏ"
+      ],
       // Danh sách 17 trận đôi của buổi
       matches: [
         { id: 1, team1: ["Tuấn Anh", "Tùng nhỏ"], team2: ["Cường", "Đạt"], score1: 11, score2: 3, note: "" },
@@ -50,5 +54,5 @@ window.PICKLEBALL_DATA = {
 };
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = PICKLEBALL_DATA;
+  module.exports = window.PICKLEBALL_DATA;
 }

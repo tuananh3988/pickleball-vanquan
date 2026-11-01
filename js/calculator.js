@@ -87,8 +87,10 @@ window.Calculator = {
     const beerPerPerson = beerCount > 0 ? (totalBeerExpense / beerCount) : 0;
 
     // 5. Tính tổng số tiền từng người phải đóng
+    const paidMembers = (session.paidMembers || []).map(n => n.trim().toLowerCase());
     const playerRows = playersList.map(p => {
       const isBeer = beerParticipants.includes(p.name);
+      const isPaid = paidMembers.includes(p.name.toLowerCase());
       const pickCost = p.lossPenalty + pickPerPerson;
       const beerCost = isBeer ? beerPerPerson : 0;
       const totalFinal = pickCost + beerCost;
@@ -96,6 +98,7 @@ window.Calculator = {
       return {
         ...p,
         isBeer,
+        isPaid,
         pickCost,
         beerCost,
         totalFinal,
@@ -125,6 +128,7 @@ window.Calculator = {
         beerCount,
         beerPerPerson,
         totalAllExpenses: totalPickExpense + totalBeerExpense,
+        totalPaidCount: playerRows.filter(p => p.isPaid).length,
         totalCalculatedFinal
       }
     };

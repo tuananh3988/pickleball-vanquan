@@ -3,7 +3,7 @@
  */
 
 window.App = {
-  activeTab: 'leaderboard',
+  activeTab: 'sessions',
   currentFilter: { type: 'all' },
   currentSessionId: null,
   cachedLeaderboardData: null,
@@ -25,6 +25,9 @@ window.App = {
     this.renderLeaderboard();
     this.renderSessionDetail();
     this.renderPairs();
+
+    // Mặc định hiển thị tab Chi Tiết Buổi Chơi
+    this.switchTab('sessions');
 
     if (window.lucide) {
       lucide.createIcons();
@@ -414,6 +417,16 @@ window.App = {
               ${Calculator.formatCurrency(p.totalFinal, true)}
               <span class="block text-[10px] text-slate-400 font-normal">(${Calculator.formatCurrency(p.totalFinal)})</span>
             </td>
+            <td class="py-3 px-3 text-center">
+              ${p.isPaid
+                ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    ✓ Đã đóng
+                  </span>`
+                : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-400">
+                    Chưa đóng
+                  </span>`
+              }
+            </td>
           </tr>
         `;
       }).join('');
@@ -434,6 +447,9 @@ window.App = {
           <td class="py-3 px-4 text-right bg-emerald-100/70 font-black text-sm text-emerald-950">
             ${Calculator.formatCurrency(summary.totalAllExpenses, true)}
             <span class="block text-[10px] text-emerald-800 font-bold">(${Calculator.formatCurrency(summary.totalAllExpenses)})</span>
+          </td>
+          <td class="py-3 px-3 text-center font-black text-xs ${summary.totalPaidCount === summary.totalPlayers ? 'text-emerald-700' : 'text-slate-600'}">
+            ${summary.totalPaidCount}/${summary.totalPlayers} đã đóng
           </td>
         </tr>
       `;
