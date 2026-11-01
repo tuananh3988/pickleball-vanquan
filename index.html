@@ -121,21 +121,13 @@
     <section id="section-sessions" class="space-y-6">
       
       <!-- Session Header & Selector -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3 sm:p-4 flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <span class="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">
-            <i data-lucide="receipt" class="w-5 h-5"></i>
+            <i data-lucide="calendar" class="w-5 h-5"></i>
           </span>
-          <div>
-            <h2 id="session-title-display" class="text-lg sm:text-xl font-bold text-slate-900">Chi Tiết Buổi Chơi & Sổ Quỹ</h2>
-            <p id="session-info-display" class="text-xs text-slate-500 font-medium">Buổi thi đấu CLB Pickleball Văn Quán</p>
-          </div>
-        </div>
-
-        <!-- Dropdown Session Selector -->
-        <div class="flex items-center space-x-2">
           <div class="relative">
-            <select id="session-select" onchange="App.selectSession(this.value)" class="appearance-none bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-xs sm:text-sm rounded-xl py-2 pl-3.5 pr-9 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm">
+            <select id="session-select" onchange="App.selectSession(this.value)" class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-base sm:text-lg rounded-xl py-1.5 pl-3 pr-9 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm transition">
               <!-- Populated dynamically -->
             </select>
             <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
@@ -143,22 +135,14 @@
         </div>
       </div>
 
-      <!-- 2 CỘT: TRÁI (Bảng chia tiền) & PHẢI (Chi phí buổi chơi) -->
+      <!-- 2 CỘT: TRÁI (Bảng chia tiền - rộng hơn) & PHẢI (Chi phí buổi chơi - nhỏ gọn) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- CỘT TRÁI: BẢNG CHIA TIỀN (8 Cột) -->
-        <div class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden p-4 sm:p-6 space-y-4">
-          <div class="flex items-center justify-between gap-2 pb-2">
-            <div>
-              <h3 class="text-xl font-bold text-slate-900 tracking-tight">Bảng chia tiền</h3>
-              <p class="text-xs text-slate-400 font-medium mt-0.5">Thua ít đứng trước · bằng thua, thắng nhiều đứng trước</p>
-            </div>
-            <div>
-              <button onclick="App.copyZaloSummary()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold shadow-sm transition">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                <span>Sao chép</span>
-              </button>
-            </div>
+        <!-- CỘT TRÁI: BẢNG CHIA TIỀN (9 Cột) -->
+        <div class="lg:col-span-9 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden p-4 sm:p-6 space-y-4">
+          <div class="pb-2">
+            <h3 class="text-xl font-bold text-slate-900 tracking-tight">Bảng chia tiền</h3>
+            <p class="text-xs text-slate-400 font-medium mt-0.5">Thua ít đứng trước · bằng thua, thắng nhiều đứng trước</p>
           </div>
 
           <div class="overflow-x-auto -mx-4 sm:mx-0">
@@ -187,9 +171,9 @@
           </div>
         </div>
 
-        <!-- CỘT PHẢI: CHI PHÍ BUỔI CHƠI (4 Cột) -->
-        <div class="lg:col-span-4 lg:sticky lg:top-20">
-          <div id="session-cost-summary-card" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 space-y-4">
+        <!-- CỘT PHẢI: CHI PHÍ BUỔI CHƠI (3 Cột) -->
+        <div class="lg:col-span-3 lg:sticky lg:top-20">
+          <div id="session-cost-summary-card" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-5 space-y-4">
             <!-- Rendered dynamically -->
           </div>
         </div>
