@@ -719,6 +719,21 @@ window.App = {
   },
 
   /**
+   * Sao chép đoạn văn bản bất kỳ vào clipboard (ví dụ: Số tài khoản)
+   */
+  copyText(text, message = "Đã sao chép!") {
+    if (!navigator.clipboard) {
+      prompt("Sao chép:", text);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      this.showToast(message);
+    }).catch(() => {
+      prompt("Sao chép:", text);
+    });
+  },
+
+  /**
    * Hiển thị thông báo Toast
    */
   showToast(message) {
