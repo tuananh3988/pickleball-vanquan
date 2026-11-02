@@ -15,6 +15,9 @@ window.App = {
       return;
     }
 
+    // 1. Đọc nhanh dữ liệu đã lưu trong bộ nhớ máy (0ms, không cần chờ mạng)
+    this.restoreFromCache();
+
     // Chọn buổi mới nhất làm mặc định
     const sessions = window.PICKLEBALL_DATA.sessions || [];
     if (sessions.length > 0) {
@@ -33,8 +36,8 @@ window.App = {
       lucide.createIcons();
     }
 
-    // Tự động kết nối và đồng bộ thời gian thực từ Google Sheets
-    this.syncLiveFromGoogleSheet();
+    // 2. Tự động kiểm tra Google Sheet (chỉ tải khi cache hết hạn 10 phút)
+    this.syncLiveFromGoogleSheet(false);
   },
 
   /**
@@ -755,32 +758,93 @@ window.App = {
   },
 
   /**
-   * Tự động đồng bộ thời gian thực từ Google Sheets
+   * Khôi phục dữ liệu từ bộ nhớ cache trình duyệt (localStorage) để nạp tức thì trong 0ms
    */
-  async syncLiveFromGoogleSheet() {
+  restoreFromCache() {
+    try {
+      const cachedCSV = localStorage.getItem('PICKLEBALL_CACHE_CSV');
+      if (cachedCSV && cachedCSV.length > 50) {
+        this.applyGoogleSheetCSV(cachedCSV);
+      }
+    } catch (e) {
+      console.warn("Không thể đọc cache trình duyệt:", e);
+    }
+  },
+
+  /**
+   * Đồng bộ dữ liệu từ Google Sheets với cơ chế Smart Cache (Hạn 10 phút, tự kiểm tra thay đổi)
+   * @param {boolean} forceRefresh - Bắt buộc tải lại bản mới bỏ qua hạn cache
+   */
+  async syncLiveFromGoogleSheet(forceRefresh = false) {
     const sheetId = window.PICKLEBALL_DATA ? window.PICKLEBALL_DATA.googleSheetId : null;
     if (!sheetId) return;
 
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+    const CACHE_KEY_CSV = 'PICKLEBALL_CACHE_CSV';
+    const CACHE_KEY_TIME = 'PICKLEBALL_CACHE_TIME';
+    const CACHE_TTL_MS = 10 * 60 * 1000; // 10 phút
+
     const statusText = document.getElementById('sync-status-text');
+    const refreshIcon = document.getElementById('sync-refresh-icon');
+
+    // Kiểm tra thời hạn cache
+    const cachedTime = parseInt(localStorage.getItem(CACHE_KEY_TIME) || '0', 10);
+    const cachedCSV = localStorage.getItem(CACHE_KEY_CSV);
+    const now = Date.now();
+
+    // Nếu không bấm ép làm mới và cache vẫn còn hạn 10 phút -> KHÔNG tải lại để tối ưu tốc độ
+    if (!forceRefresh && cachedCSV && (now - cachedTime < CACHE_TTL_MS)) {
+      if (statusText) statusText.textContent = "Đã đồng bộ";
+      return;
+    }
+
+    // Hiệu ứng đang tải xoay tròn
+    if (refreshIcon) refreshIcon.classList.add('animate-spin');
+    if (statusText) statusText.textContent = "Đang kiểm tra...";
+
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${now}`;
 
     try {
       const response = await fetch(url);
-      if (!response.ok) return;
+      if (!response.ok) throw new Error("Phản hồi lỗi: " + response.status);
       const csvText = await response.text();
-      if (!csvText || csvText.length < 50) return;
+      if (!csvText || csvText.length < 50) throw new Error("Dữ liệu rỗng");
 
-      const updated = this.applyGoogleSheetCSV(csvText);
-      if (updated) {
-        this.renderLeaderboard();
-        this.renderSessionDetail();
-        this.renderPairs();
-        if (statusText) statusText.textContent = "Đã cập nhật ✓";
+      // So sánh nội dung mới với bản lưu trước đó xem có cập nhật mới không
+      const isChanged = (csvText !== cachedCSV);
+
+      // Cập nhật bộ nhớ cache máy
+      localStorage.setItem(CACHE_KEY_CSV, csvText);
+      localStorage.setItem(CACHE_KEY_TIME, String(Date.now()));
+
+      if (isChanged || forceRefresh) {
+        const updated = this.applyGoogleSheetCSV(csvText);
+        if (updated) {
+          this.renderLeaderboard();
+          this.renderSessionDetail();
+          this.renderPairs();
+          if (forceRefresh) {
+            this.showToast("✓ Đã cập nhật dữ liệu mới nhất từ Google Sheet!");
+          }
+        }
       }
+
+      if (statusText) statusText.textContent = "Đã cập nhật ✓";
     } catch (e) {
       console.log("Sử dụng dữ liệu tĩnh (offline/cache):", e);
       if (statusText) statusText.textContent = "Đã đồng bộ";
+      if (forceRefresh) {
+        this.showToast("Không thể tải Google Sheet, đang dùng dữ liệu offline.");
+      }
+    } finally {
+      if (refreshIcon) refreshIcon.classList.remove('animate-spin');
     }
+  },
+
+  /**
+   * Nút bấm chủ động làm mới dữ liệu từ Google Sheet
+   */
+  forceRefreshFromSheet() {
+    this.syncLiveFromGoogleSheet(true);
   },
 
   /**
