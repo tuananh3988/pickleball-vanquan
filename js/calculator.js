@@ -324,6 +324,166 @@ window.Calculator = {
   },
 
   /**
+   * Tính toán Thống kê Đi Bia (Beer Leaderboard)
+   * Sắp xếp:
+   * 1. Số lần đi bia nhiều hơn xếp trên (beerCount desc)
+   * 2. Nếu bằng nhau: Ai tốn nhiều tiền bia hơn xếp trên (totalBeerCost desc)
+   * 3. Theo tên A-Z tiếng Việt
+   * @param {Array} sessions - Danh sách các buổi chơi
+   * @param {Object} filter - Bộ lọc thời gian (mặc định 'all')
+   */
+  calculateBeerLeaderboard(sessions, filter = { type: 'all' }) {
+    if (!sessions || sessions.length === 0) {
+      return {
+        players: [],
+        summary: {
+          totalClubBeerExpense: 0,
+          totalBeerAttendances: 0,
+          sessionsWithBeer: 0,
+          topDrinker: null,
+          avgPerSession: 0
+        }
+      };
+    }
+
+    // 1. Lọc sessions theo filter thời gian
+    const filteredSessions = sessions.filter(session => {
+      if (!filter || filter.type === 'all') return true;
+      if (!session.date) return true;
+      const date = new Date(session.date);
+      const sYear = date.getFullYear();
+      const sMonth = date.getMonth() + 1;
+      const sQuarter = Math.ceil(sMonth / 3);
+      const sWeek = this.getISOWeek(date);
+
+      if (filter.type === 'year') return sYear === parseInt(filter.year);
+      if (filter.type === 'quarter') return sYear === parseInt(filter.year) && sQuarter === parseInt(filter.quarter);
+      if (filter.type === 'month') return sYear === parseInt(filter.year) && sMonth === parseInt(filter.month);
+      if (filter.type === 'week') return sYear === parseInt(filter.year) && sWeek === parseInt(filter.week);
+      return true;
+    });
+
+    const playerBeerMap = {};
+    let totalClubBeerExpense = 0;
+    let totalBeerAttendances = 0;
+    let sessionsWithBeer = 0;
+
+    filteredSessions.forEach(session => {
+      const exp = session.expenses || {};
+      const sessionBeerExpense = exp.beer || 0;
+      const beerList = (session.beerParticipants || []).map(n => n.trim()).filter(Boolean);
+      const beerCount = beerList.length;
+      const costPerPerson = beerCount > 0 ? (sessionBeerExpense / beerCount) : 0;
+
+      if (sessionBeerExpense > 0 || beerCount > 0) {
+        sessionsWithBeer++;
+        totalClubBeerExpense += sessionBeerExpense;
+      }
+
+      // Thu thập tất cả thành viên trong buổi (từ matches)
+      (session.matches || []).forEach(m => {
+        [...(m.team1 || []), ...(m.team2 || [])].forEach(rawName => {
+          const name = rawName.trim();
+          if (!playerBeerMap[name]) {
+            playerBeerMap[name] = {
+              name,
+              beerCount: 0,
+              totalBeerCost: 0,
+              playedSessions: 0,
+              sessionsList: []
+            };
+          }
+        });
+      });
+
+      // Thu thập thành viên từ beerParticipants nếu có người chỉ tham gia tăng 2
+      beerList.forEach(name => {
+        if (!playerBeerMap[name]) {
+          playerBeerMap[name] = {
+            name,
+            beerCount: 0,
+            totalBeerCost: 0,
+            playedSessions: 0,
+            sessionsList: []
+          };
+        }
+      });
+
+      // Đếm số buổi có mặt của người chơi
+      const sessionPlayerNames = new Set();
+      (session.matches || []).forEach(m => {
+        [...(m.team1 || []), ...(m.team2 || [])].forEach(n => sessionPlayerNames.add(n.trim()));
+      });
+      beerList.forEach(n => sessionPlayerNames.add(n));
+
+      sessionPlayerNames.forEach(name => {
+        if (playerBeerMap[name]) {
+          playerBeerMap[name].playedSessions += 1;
+        }
+      });
+
+      // Ghi nhận đi bia
+      beerList.forEach(name => {
+        const p = playerBeerMap[name];
+        if (p) {
+          p.beerCount += 1;
+          p.totalBeerCost += costPerPerson;
+          totalBeerAttendances += 1;
+          p.sessionsList.push({
+            sessionId: session.id,
+            sessionName: session.name,
+            date: session.date,
+            cost: costPerPerson
+          });
+        }
+      });
+    });
+
+    // 2. Chuyển thành danh sách và tính thêm các chỉ số
+    const players = Object.values(playerBeerMap).map(p => {
+      const avgCost = p.beerCount > 0 ? (p.totalBeerCost / p.beerCount) : 0;
+      const attendanceRate = p.playedSessions > 0 ? ((p.beerCount / p.playedSessions) * 100) : 0;
+
+      return {
+        ...p,
+        totalBeerCost: Math.round(p.totalBeerCost),
+        avgCost: Math.round(avgCost),
+        attendanceRate: Math.round(attendanceRate)
+      };
+    });
+
+    // 3. SẮP XẾP CHUẨN XÁC THEO YÊU CẦU:
+    // - Ưu tiên 1: Đi nhiều xếp trên cùng (b.beerCount - a.beerCount)
+    // - Ưu tiên 2: Nếu số lượng đi bằng nhau -> Ai tốn tiền nhiều hơn xếp phía trên (b.totalBeerCost - a.totalBeerCost)
+    // - Ưu tiên 3: Tên A-Z tiếng Việt
+    players.sort((a, b) => {
+      if (b.beerCount !== a.beerCount) {
+        return b.beerCount - a.beerCount;
+      }
+      if (b.totalBeerCost !== a.totalBeerCost) {
+        return b.totalBeerCost - a.totalBeerCost;
+      }
+      return a.name.localeCompare(b.name, 'vi');
+    });
+
+    // Gán thứ hạng Rank
+    players.forEach((p, idx) => {
+      p.rank = idx + 1;
+    });
+
+    return {
+      players,
+      summary: {
+        totalClubBeerExpense: Math.round(totalClubBeerExpense),
+        totalBeerAttendances,
+        sessionsWithBeer,
+        topDrinker: players.length > 0 && players[0].beerCount > 0 ? players[0] : null,
+        avgPerSession: sessionsWithBeer > 0 ? Math.round(totalClubBeerExpense / sessionsWithBeer) : 0
+      }
+    };
+  },
+
+  /**
    * Tính tuần ISO trong năm
    */
   getISOWeek(date) {

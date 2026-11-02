@@ -28,6 +28,7 @@ window.App = {
     this.renderLeaderboard();
     this.renderSessionDetail();
     this.renderPairs();
+    this.renderBeerLeaderboard();
 
     // Mặc định hiển thị tab Chi Tiết Buổi Chơi
     this.switchTab('sessions');
@@ -60,7 +61,7 @@ window.App = {
     this.activeTab = tabName;
 
     // Ẩn tất cả các section
-    ['leaderboard', 'sessions', 'pairs'].forEach(tab => {
+    ['leaderboard', 'sessions', 'pairs', 'beer'].forEach(tab => {
       const section = document.getElementById(`section-${tab}`);
       if (section) section.classList.add('hidden');
     });
@@ -68,6 +69,10 @@ window.App = {
     // Hiện section được chọn
     const activeSection = document.getElementById(`section-${tabName}`);
     if (activeSection) activeSection.classList.remove('hidden');
+
+    if (tabName === 'beer') {
+      this.renderBeerLeaderboard();
+    }
 
     // Cập nhật desktop tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -81,7 +86,7 @@ window.App = {
     // Cập nhật mobile tab buttons
     document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
       const isTarget = btn.getAttribute('data-tab') === tabName;
-      btn.className = `mobile-tab-btn flex flex-col items-center py-1 px-3 text-xs font-semibold ${isTarget ? 'text-pickle-400 font-bold' : 'text-slate-400'}`;
+      btn.className = `mobile-tab-btn flex flex-col items-center py-1 px-2 text-xs font-semibold ${isTarget ? 'text-pickle-400 font-bold' : 'text-slate-400'}`;
     });
 
     if (window.lucide) {
@@ -700,6 +705,153 @@ window.App = {
   },
 
   /**
+   * Render Tab Thống Kê Vua Bia
+   */
+  renderBeerLeaderboard() {
+    const tbody = document.getElementById('beer-tbody');
+    if (!tbody) return;
+
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
+    const stats = Calculator.calculateBeerLeaderboard(sessions, { type: 'all' });
+    this.beerPlayers = stats.players || [];
+    const summary = stats.summary || {};
+
+    // Cập nhật 4 thẻ thống kê
+    const elTopName = document.getElementById('beer-stat-top-name');
+    const elTopDesc = document.getElementById('beer-stat-top-desc');
+    const elTotalExp = document.getElementById('beer-stat-total-expense');
+    const elSessionsCount = document.getElementById('beer-stat-sessions-count');
+    const elAttendances = document.getElementById('beer-stat-total-attendances');
+    const elAvgSession = document.getElementById('beer-stat-avg-session');
+
+    if (elTopName) {
+      if (summary.topDrinker && summary.topDrinker.beerCount > 0) {
+        elTopName.textContent = summary.topDrinker.name;
+        if (elTopDesc) {
+          elTopDesc.textContent = `${summary.topDrinker.beerCount} buổi (${Calculator.formatCurrency(summary.topDrinker.totalBeerCost)})`;
+        }
+      } else {
+        elTopName.textContent = "Chưa có";
+        if (elTopDesc) elTopDesc.textContent = "Chưa có dữ liệu";
+      }
+    }
+
+    if (elTotalExp) elTotalExp.textContent = Calculator.formatCurrency(summary.totalClubBeerExpense || 0);
+    if (elSessionsCount) elSessionsCount.textContent = `${summary.sessionsWithBeer || 0} buổi có tăng 2`;
+    if (elAttendances) elAttendances.textContent = `${summary.totalBeerAttendances || 0} lượt`;
+    if (elAvgSession) elAvgSession.textContent = Calculator.formatCurrency(summary.avgPerSession || 0);
+
+    // Render bảng người chơi
+    this.renderBeerTableRows(this.beerPlayers);
+  },
+
+  /**
+   * Render danh sách các dòng người chơi trong bảng Vua Bia
+   */
+  renderBeerTableRows(players) {
+    const tbody = document.getElementById('beer-tbody');
+    if (!tbody) return;
+
+    if (!players || players.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Chưa có dữ liệu đi bia</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = players.map(p => {
+      // Huy hiệu thứ hạng
+      let rankBadge = `<span class="font-bold text-slate-500">#${p.rank}</span>`;
+      let rowHighlight = "hover:bg-slate-50";
+
+      if (p.rank === 1 && p.beerCount > 0) {
+        rankBadge = `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-400 text-slate-950 font-black text-sm shadow-xs ring-2 ring-amber-300/60" title="Vua Bia">🥇</span>`;
+        rowHighlight = "bg-amber-50/40 hover:bg-amber-50/70";
+      } else if (p.rank === 2 && p.beerCount > 0) {
+        rankBadge = `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-800 font-black text-sm shadow-xs" title="Á Quân Bia">🥈</span>`;
+      } else if (p.rank === 3 && p.beerCount > 0) {
+        rankBadge = `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-700 text-white font-black text-sm shadow-xs" title="Hạng 3 Bia">🥉</span>`;
+      }
+
+      // Danh hiệu phong cách
+      let badgeTitle = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500">🧃 Đội Nước Suối</span>`;
+      if (p.rank === 1 && p.beerCount > 0) {
+        badgeTitle = `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-2xs">👑 Vua Bia CLB</span>`;
+      } else if (p.rank === 2 && p.beerCount > 0) {
+        badgeTitle = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-800">🥈 Á Quân Bia</span>`;
+      } else if (p.rank === 3 && p.beerCount > 0) {
+        badgeTitle = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">🥉 Cao Thủ Bàn Nhậu</span>`;
+      } else if (p.beerCount > 0) {
+        if (p.attendanceRate >= 100) {
+          badgeTitle = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🍻 100% Có Mặt</span>`;
+        } else {
+          badgeTitle = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200/80">🍺 Dân Chơi Tăng 2</span>`;
+        }
+      }
+
+      return `
+        <tr class="${rowHighlight} transition group">
+          <td class="py-3.5 px-3 text-center whitespace-nowrap">${rankBadge}</td>
+          <td class="py-3.5 px-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-100 whitespace-nowrap min-w-[140px]">
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-slate-900 ${p.rank === 1 && p.beerCount > 0 ? 'text-amber-900' : ''}">${p.name}</span>
+              ${p.rank === 1 && p.beerCount > 0 ? '<span class="text-xs">👑</span>' : ''}
+            </div>
+          </td>
+          <td class="py-3.5 px-4 text-center whitespace-nowrap">
+            ${p.beerCount > 0 
+              ? `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                  🍻 ${p.beerCount} buổi
+                 </span>`
+              : `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs text-slate-400 bg-slate-100 font-normal">
+                  0 buổi
+                 </span>`
+            }
+          </td>
+          <td class="py-3.5 px-4 text-right whitespace-nowrap">
+            <span class="font-mono font-bold text-xs sm:text-sm ${p.totalBeerCost > 0 ? 'text-amber-900' : 'text-slate-400'}">
+              ${Calculator.formatCurrency(p.totalBeerCost)}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 text-right whitespace-nowrap hidden sm:table-cell">
+            <span class="font-mono text-xs sm:text-sm ${p.avgCost > 0 ? 'text-slate-600' : 'text-slate-400'}">
+              ${p.avgCost > 0 ? Calculator.formatCurrency(p.avgCost) : '—'}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 text-center whitespace-nowrap hidden md:table-cell">
+            <div class="inline-flex flex-col items-center">
+              <span class="text-xs font-bold text-slate-700">${p.attendanceRate}%</span>
+              <div class="w-16 bg-slate-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                <div class="bg-amber-500 h-1.5 rounded-full" style="width: ${Math.min(p.attendanceRate, 100)}%"></div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 text-center whitespace-nowrap">${badgeTitle}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  },
+
+  /**
+   * Lọc danh sách người chơi trong bảng Vua Bia theo tên
+   */
+  filterBeerTable(query) {
+    if (!this.beerPlayers) return;
+    const cleanQuery = (query || '').toLowerCase().trim();
+    if (!cleanQuery) {
+      this.renderBeerTableRows(this.beerPlayers);
+      return;
+    }
+
+    const filtered = this.beerPlayers.filter(p => 
+      p.name.toLowerCase().includes(cleanQuery)
+    );
+    this.renderBeerTableRows(filtered);
+  },
+
+  /**
    * Sao chép bảng tổng kết chi phí để dán thẳng vào Zalo
    */
   copyZaloSummary() {
@@ -838,6 +990,7 @@ window.App = {
           this.renderLeaderboard();
           this.renderSessionDetail();
           this.renderPairs();
+          this.renderBeerLeaderboard();
           if (forceRefresh) {
             this.showToast("✓ Đã cập nhật dữ liệu mới nhất từ Google Sheet!");
           }
