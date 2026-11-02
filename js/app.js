@@ -1010,6 +1010,7 @@ window.App = {
   // ==========================================
 
   currentPaymentData: null,
+  currentQRBlob: null,
 
   /**
    * Chuyển đổi chuỗi tiếng Việt có dấu thành không dấu để tương thích với nội dung chuyển khoản ngân hàng
@@ -1023,6 +1024,27 @@ window.App = {
       .replace(/Đ/g, 'D')
       .replace(/[^a-zA-Z0-9\s]/g, '')
       .trim();
+  },
+
+  /**
+   * Tạo đường dẫn ảnh QR từ thông tin hiện tại
+   */
+  getQRImageUrl() {
+    if (!this.currentPaymentData) return '';
+    const { amount, note } = this.currentPaymentData;
+    return `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
+  },
+
+  /**
+   * Tạo đường dẫn proxy có hỗ trợ CORS để lấy dữ liệu ảnh sang Blob
+   */
+  getQRProxyUrl() {
+    const rawUrl = this.getQRImageUrl();
+    if (!rawUrl) return '';
+    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+      return `/api/vietqr?url=${encodeURIComponent(rawUrl)}`;
+    }
+    return rawUrl;
   },
 
   /**
@@ -1055,11 +1077,27 @@ window.App = {
     const copyNoteEl = document.getElementById('pay-copy-note');
     if (copyNoteEl) copyNoteEl.textContent = note;
 
-    // Tạo link ảnh VietQR động: nhúng sẵn số tiền, STK, tên người nhận và nội dung
+    // Hiển thị ảnh QR trực tiếp từ link gốc
     const qrImg = document.getElementById('pay-dynamic-qr-img');
+    const qrUrl = this.getQRImageUrl();
     if (qrImg) {
-      const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
       qrImg.src = qrUrl;
+    }
+
+    // TẢI TRƯỚC BLOB ẢNH QR QUA PROXY ĐỂ SAO CHÉP NGAY TỨC THÌ (0ms)
+    this.currentQRBlob = null;
+    const proxyUrl = this.getQRProxyUrl();
+    if (proxyUrl) {
+      fetch(proxyUrl)
+        .then(r => r.ok ? r.blob() : null)
+        .then(blob => {
+          if (blob) {
+            this.currentQRBlob = blob.type === 'image/png' ? blob : new Blob([blob], { type: 'image/png' });
+          }
+        })
+        .catch(err => {
+          console.warn("Không thể tải trước blob ảnh QR:", err);
+        });
     }
 
     // Render danh sách app ngân hàng nếu chưa có
@@ -1091,24 +1129,30 @@ window.App = {
    */
   async downloadQRCode() {
     if (!this.currentPaymentData) return;
-    const { amount, note, name } = this.currentPaymentData;
-    const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
+    const { amount, name } = this.currentPaymentData;
+    const cleanName = this.removeVietnameseTones(name).replace(/\s+/g, '');
+    const filename = `VietQR_${cleanName}_${amount}d.png`;
 
     try {
       this.showToast("Đang tải ảnh mã QR...");
-      const res = await fetch(qrUrl);
-      const blob = await res.blob();
+      let blob = this.currentQRBlob;
+      if (!blob) {
+        const proxyUrl = this.getQRProxyUrl();
+        const res = await fetch(proxyUrl);
+        blob = await res.blob();
+      }
+
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `VietQR_${this.removeVietnameseTones(name).replace(/\s+/g, '')}_${amount}d.png`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-      this.showToast("✓ Đã tải ảnh QR! Mở app ngân hàng -> Quét QR -> Chọn ảnh từ thư viện.");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      this.showToast("✓ Đã tải ảnh QR! Mở app ngân hàng ➔ Quét QR ➔ Chọn ảnh từ Thư viện.");
     } catch (e) {
-      window.open(qrUrl, '_blank');
+      window.open(this.getQRImageUrl(), '_blank');
       this.showToast("Đã mở ảnh QR. Bạn nhấn giữ ảnh để Lưu vào Thư viện!");
     }
   },
@@ -1118,56 +1162,49 @@ window.App = {
    */
   async copyQRImageToClipboard() {
     if (!this.currentPaymentData) return;
-    const { amount, note } = this.currentPaymentData;
-    const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
 
     if (!navigator.clipboard || !window.ClipboardItem) {
-      this.showToast("Trình duyệt không hỗ trợ chép ảnh trực tiếp, bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+      this.showToast("Trình duyệt không hỗ trợ sao chép ảnh trực tiếp. Bạn vui lòng bấm 'Tải ảnh QR về máy' nhé!");
       return;
     }
 
+    this.showToast("Đang sao chép ảnh mã QR...");
+
     try {
-      this.showToast("Đang sao chép ảnh QR vào bộ nhớ tạm...");
-      const res = await fetch(qrUrl);
-      const blob = await res.blob();
-      const pngBlob = blob.type === 'image/png' ? blob : new Blob([await blob.arrayBuffer()], { type: 'image/png' });
-      
-      const item = new ClipboardItem({ 'image/png': pngBlob });
-      await navigator.clipboard.write([item]);
-      this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
-    } catch (err) {
-      console.warn("Không thể sao chép trực tiếp qua fetch blob, thử dùng canvas:", err);
-      try {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = async () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || 500;
-          canvas.height = img.naturalHeight || 500;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          canvas.toBlob(async (canvasBlob) => {
-            if (canvasBlob) {
-              try {
-                await navigator.clipboard.write([
-                  new ClipboardItem({ 'image/png': canvasBlob })
-                ]);
-                this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
-              } catch (e3) {
-                this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
-              }
-            } else {
-              this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
-            }
-          }, 'image/png');
-        };
-        img.onerror = () => {
-          this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
-        };
-        img.src = qrUrl;
-      } catch (e2) {
-        this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+      // Trường hợp 1: Đã có sẵn blob trong bộ nhớ (tải trước lúc mở popup) -> Sao chép tức thì trong click event!
+      if (this.currentQRBlob) {
+        const item = new ClipboardItem({ 'image/png': this.currentQRBlob });
+        await navigator.clipboard.write([item]);
+        this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+        return;
       }
+
+      // Trường hợp 2: Chưa tải xong blob, fetch ngay qua proxy
+      const proxyUrl = this.getQRProxyUrl();
+      const blobPromise = fetch(proxyUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("Proxy error: " + res.status);
+          return res.blob();
+        })
+        .then(b => b.type === 'image/png' ? b : new Blob([b], { type: 'image/png' }));
+
+      // Thử truyền trực tiếp Promise vào ClipboardItem (chuẩn Safari iOS)
+      try {
+        const item = new ClipboardItem({ 'image/png': blobPromise });
+        await navigator.clipboard.write([item]);
+        this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+        return;
+      } catch (safariErr) {
+        // Fallback cho trình duyệt cần await blob (Android Chrome)
+        const blob = await blobPromise;
+        this.currentQRBlob = blob;
+        const item = new ClipboardItem({ 'image/png': blob });
+        await navigator.clipboard.write([item]);
+        this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi sao chép ảnh vào clipboard:", err);
+      this.showToast("Không thể sao chép ảnh vào bộ nhớ tạm. Bạn vui lòng bấm 'Tải ảnh QR về máy' nhé!");
     }
   },
 
