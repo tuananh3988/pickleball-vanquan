@@ -405,16 +405,22 @@
             <img id="pay-dynamic-qr-img" src="" alt="Mã QR Chuyển khoản tự động" class="w-52 h-52 sm:w-56 sm:h-56 object-contain rounded-lg mx-auto">
           </div>
 
-          <!-- Nút Tải ảnh QR (Giải pháp hoàn hảo nhất cho Mobile) -->
-          <div class="space-y-1.5">
+          <!-- Nút Tải ảnh QR & Sao chép ảnh QR vào Clipboard -->
+          <div class="space-y-2">
             <button onclick="App.downloadQRCode()" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm active:scale-98 transition flex items-center justify-center space-x-2 cursor-pointer">
               <i data-lucide="download" class="w-4 h-4"></i>
-              <span>Tải ảnh QR về máy (để quét tự động)</span>
+              <span>Tải ảnh QR về máy (để quét từ thư viện)</span>
             </button>
+
+            <button onclick="App.copyQRImageToClipboard()" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50/80 border border-slate-200 hover:border-emerald-300 shadow-2xs active:scale-98 transition flex items-center justify-center space-x-2 cursor-pointer">
+              <i data-lucide="clipboard-copy" class="w-4 h-4 text-emerald-600"></i>
+              <span>Sao chép ảnh mã QR (Dán trực tiếp vào App)</span>
+            </button>
+
             <p class="text-[11px] text-slate-500 leading-relaxed text-left bg-white p-2.5 rounded-lg border border-slate-200/70">
               💡 <strong>Cách tự điền số tiền 100% trên điện thoại:</strong><br>
-              1. Bấm nút <strong>Tải ảnh QR</strong> ở trên (hoặc nhấn giữ ảnh QR để lưu).<br>
-              2. Mở app ngân hàng ➔ Chọn <strong>Quét QR</strong> ➔ Bấm <strong>Chọn ảnh từ Thư viện</strong>. Toàn bộ số tiền và nội dung sẽ tự động điền sẵn!
+              • <strong>Cách 1:</strong> Bấm <strong>Sao chép ảnh mã QR</strong> ➔ Mở app ngân hàng ➔ Chọn Quét QR ➔ Bấm <strong>"Dán ảnh"</strong>.<br>
+              • <strong>Cách 2:</strong> Bấm <strong>Tải ảnh QR</strong> ➔ Mở app ngân hàng ➔ Chọn Quét QR ➔ Bấm <strong>"Chọn từ Thư viện (Album)"</strong>.
             </p>
           </div>
         </div>

@@ -1114,6 +1114,64 @@ window.App = {
   },
 
   /**
+   * Sao chép trực tiếp ảnh mã QR vào Clipboard để dán vào App ngân hàng (không cần lưu ảnh)
+   */
+  async copyQRImageToClipboard() {
+    if (!this.currentPaymentData) return;
+    const { amount, note } = this.currentPaymentData;
+    const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
+
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      this.showToast("Trình duyệt không hỗ trợ chép ảnh trực tiếp, bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+      return;
+    }
+
+    try {
+      this.showToast("Đang sao chép ảnh QR vào bộ nhớ tạm...");
+      const res = await fetch(qrUrl);
+      const blob = await res.blob();
+      const pngBlob = blob.type === 'image/png' ? blob : new Blob([await blob.arrayBuffer()], { type: 'image/png' });
+      
+      const item = new ClipboardItem({ 'image/png': pngBlob });
+      await navigator.clipboard.write([item]);
+      this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+    } catch (err) {
+      console.warn("Không thể sao chép trực tiếp qua fetch blob, thử dùng canvas:", err);
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 500;
+          canvas.height = img.naturalHeight || 500;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(async (canvasBlob) => {
+            if (canvasBlob) {
+              try {
+                await navigator.clipboard.write([
+                  new ClipboardItem({ 'image/png': canvasBlob })
+                ]);
+                this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+              } catch (e3) {
+                this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+              }
+            } else {
+              this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+            }
+          }, 'image/png');
+        };
+        img.onerror = () => {
+          this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+        };
+        img.src = qrUrl;
+      } catch (e2) {
+        this.showToast("Không thể sao chép ảnh. Bạn hãy dùng nút 'Tải ảnh QR' nhé!");
+      }
+    }
+  },
+
+  /**
    * Render danh sách các ứng dụng ngân hàng phổ biến tại Việt Nam
    */
   renderBankList() {
