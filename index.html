@@ -400,29 +400,18 @@
         </div>
 
         <!-- MÃ QR THANH TOÁN TỰ ĐỘNG -->
-        <div class="text-center space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+        <div class="text-center space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
           <div class="inline-block p-2 bg-white rounded-xl border border-slate-200 shadow-xs">
             <img id="pay-dynamic-qr-img" src="" alt="Mã QR Chuyển khoản tự động" class="w-52 h-52 sm:w-56 sm:h-56 object-contain rounded-lg mx-auto cursor-pointer" style="-webkit-touch-callout: default !important; -webkit-user-select: auto !important; user-select: auto !important;" title="Nhấn giữ để sao chép hoặc lưu ảnh">
           </div>
-          <p class="text-[11px] text-slate-500 font-medium">👆 Chạm giữ vào ảnh QR ➔ Chọn <strong>"Sao chép hình ảnh"</strong></p>
+          <p class="text-xs text-slate-500 font-medium">👆 Nhấn giữ vào ảnh QR để <strong>Sao chép</strong> hoặc <strong>Lưu ảnh</strong></p>
 
-          <!-- Nút Tải ảnh QR & Sao chép ảnh QR vào Clipboard -->
-          <div class="space-y-2 pt-1">
+          <!-- Nút Tải ảnh QR -->
+          <div class="pt-1">
             <button onclick="App.downloadQRCode()" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm active:scale-98 transition flex items-center justify-center space-x-2 cursor-pointer">
               <i data-lucide="download" class="w-4 h-4"></i>
-              <span>Tải ảnh QR về máy (để quét từ thư viện)</span>
+              <span>Tải ảnh QR về máy (quét từ thư viện)</span>
             </button>
-
-            <button onclick="App.copyQRImageToClipboard()" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 hover:text-emerald-800 bg-white hover:bg-emerald-50/80 border border-slate-200 hover:border-emerald-300 shadow-2xs active:scale-98 transition flex items-center justify-center space-x-2 cursor-pointer">
-              <i data-lucide="clipboard-copy" class="w-4 h-4 text-emerald-600"></i>
-              <span>Sao chép ảnh mã QR (Dán trực tiếp vào App)</span>
-            </button>
-
-            <p class="text-[11px] text-slate-500 leading-relaxed text-left bg-white p-2.5 rounded-lg border border-slate-200/70">
-              💡 <strong>Cách tự điền số tiền 100% trên điện thoại:</strong><br>
-              • <strong>Cách 1:</strong> Chạm giữ ảnh QR ➔ Chọn <strong>"Sao chép hình ảnh"</strong> (hoặc bấm nút Sao chép) ➔ Vào app ngân hàng bấm <strong>"Dán ảnh"</strong>.<br>
-              • <strong>Cách 2:</strong> Bấm <strong>Tải ảnh QR</strong> ➔ Vào app ngân hàng ➔ Chọn Quét QR ➔ Bấm <strong>"Chọn từ Thư viện (Album)"</strong>.
-            </p>
           </div>
         </div>
 
@@ -500,6 +489,6 @@
   <!-- SCRIPTS -->
   <script src="js/data.js?v=20261102_1955"></script>
   <script src="js/calculator.js?v=20261102_1955"></script>
-  <script src="js/app.js?v=20261102_1955"></script>
+  <script src="js/app.js?v=20261102_2005"></script>
 </body>
 </html>

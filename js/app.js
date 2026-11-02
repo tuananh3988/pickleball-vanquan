@@ -1158,48 +1158,6 @@ window.App = {
   },
 
   /**
-   * Sao chép trực tiếp ảnh mã QR vào Clipboard để dán vào App ngân hàng (không cần lưu ảnh)
-   */
-  copyQRImageToClipboard() {
-    if (!this.currentPaymentData) return;
-
-    if (!navigator.clipboard || !window.ClipboardItem) {
-      this.showToast("Trình duyệt không hỗ trợ sao chép ảnh. Bạn hãy nhấn giữ ảnh QR để chép hoặc tải ảnh về nhé!");
-      return;
-    }
-
-    const proxyUrl = this.getQRProxyUrl();
-
-    // 1. Tạo Promise tải Blob PNG (nếu đã có sẵn trong bộ nhớ thì trả về ngay)
-    const blobPromise = (async () => {
-      if (this.currentQRBlob) {
-        return this.currentQRBlob.type === 'image/png' ? this.currentQRBlob : new Blob([this.currentQRBlob], { type: 'image/png' });
-      }
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const b = await res.blob();
-      this.currentQRBlob = b;
-      return b.type === 'image/png' ? b : new Blob([b], { type: 'image/png' });
-    })();
-
-    // 2. GỌI ĐỒNG BỘ NGAY LẬP TỨC TRONG USER GESTURE (Không có await nào trước đó để tránh mất quyền)
-    try {
-      const item = new ClipboardItem({ 'image/png': blobPromise });
-      navigator.clipboard.write([item])
-        .then(() => {
-          this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
-        })
-        .catch((err) => {
-          console.warn("Clipboard write rejected:", err);
-          this.showToast("Trình duyệt chặn sao chép tự động. Bạn hãy chạm giữ vào ảnh QR ➔ 'Sao chép ảnh' nhé!");
-        });
-    } catch (err) {
-      console.warn("ClipboardItem constructor error:", err);
-      this.showToast("Trình duyệt chặn sao chép tự động. Bạn hãy chạm giữ vào ảnh QR ➔ 'Sao chép ảnh' nhé!");
-    }
-  },
-
-  /**
    * Render danh sách các ứng dụng ngân hàng phổ biến tại Việt Nam
    */
   renderBankList() {
