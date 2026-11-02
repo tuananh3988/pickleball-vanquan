@@ -7,6 +7,7 @@ window.PICKLEBALL_DATA = {
   clubName: "Pickleball Văn Quán",
   subTitle: "Hệ thống Thống kê Thi đấu & Sổ quỹ CLB",
   defaultLossPenalty: 10000, // 10.000 VNĐ / trận thua
+  googleSheetId: "1KYVmtRKqrcdmxtnGfwgNRIvsjUNJHoW4gcP4ZvxM8dg",
   
   // Danh sách các buổi chơi theo thời gian
   sessions: [
@@ -25,9 +26,9 @@ window.PICKLEBALL_DATA = {
       beerParticipants: [
         "Đạt", "Tuấn Anh", "Khiêm", "Tuấn", "HAnh", "Cường", "Bình"
       ],
-      // Danh sách thành viên đã thanh toán tiền buổi này
+      // Danh sách thành viên đã thanh toán tiền buổi này (đồng bộ từ Google Sheets)
       paidMembers: [
-        "Tùng nhỏ"
+        "Tùng nhỏ", "Luân", "Đạt", "Tuấn Anh", "Tuấn", "Tùng trọc", "HAnh", "Tùng lớn", "Cường", "Bình"
       ],
       // Danh sách 17 trận đôi của buổi
       matches: [

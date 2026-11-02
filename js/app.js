@@ -32,6 +32,9 @@ window.App = {
     if (window.lucide) {
       lucide.createIcons();
     }
+
+    // Tự động kết nối và đồng bộ thời gian thực từ Google Sheets
+    this.syncLiveFromGoogleSheet();
   },
 
   /**
@@ -749,6 +752,177 @@ window.App = {
       toast.classList.remove('translate-y-0', 'opacity-100');
       toast.classList.add('translate-y-24', 'opacity-0');
     }, 3000);
+  },
+
+  /**
+   * Tự động đồng bộ thời gian thực từ Google Sheets
+   */
+  async syncLiveFromGoogleSheet() {
+    const sheetId = window.PICKLEBALL_DATA ? window.PICKLEBALL_DATA.googleSheetId : null;
+    if (!sheetId) return;
+
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+    const statusText = document.getElementById('sync-status-text');
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return;
+      const csvText = await response.text();
+      if (!csvText || csvText.length < 50) return;
+
+      const updated = this.applyGoogleSheetCSV(csvText);
+      if (updated) {
+        this.renderLeaderboard();
+        this.renderSessionDetail();
+        this.renderPairs();
+        if (statusText) statusText.textContent = "Google Sheet Live ✓";
+      }
+    } catch (e) {
+      console.log("Sử dụng dữ liệu tĩnh (offline/cache):", e);
+      if (statusText) statusText.textContent = "Dữ liệu CLB";
+    }
+  },
+
+  /**
+   * Phân tích nội dung CSV từ Google Sheet và cập nhật vào dữ liệu buổi chơi
+   */
+  applyGoogleSheetCSV(csvText) {
+    const lines = csvText.split(/\r?\n/).map(l => this.parseCSVLine(l));
+    if (lines.length < 5) return false;
+
+    const session = (window.PICKLEBALL_DATA.sessions || [])[0];
+    if (!session) return false;
+
+    let court = session.expenses.court;
+    let water = session.expenses.water;
+    let balls = session.expenses.balls;
+    let beer = session.expenses.beer;
+
+    const matches = [];
+    const paidMembers = [];
+    const beerParticipants = [];
+
+    let playerHeaderRowIdx = -1;
+    let colNameIdx = -1;
+    let colBeerIdx = -1;
+    let colPaidIdx = -1;
+
+    for (let r = 0; r < lines.length; r++) {
+      const row = lines[r];
+
+      // Tìm thông tin chi phí
+      for (let c = 0; c < row.length; c++) {
+        const cell = (row[c] || '').toLowerCase().trim();
+        if (cell === 'sân' && row[c + 1]) court = this.parseMoney(row[c + 1]);
+        if (cell === 'nước' && row[c + 1]) water = this.parseMoney(row[c + 1]);
+        if (cell === 'bóng' && row[c + 1]) balls = this.parseMoney(row[c + 1]);
+        if (cell === 'bia' && row[c + 1]) beer = this.parseMoney(row[c + 1]);
+      }
+
+      // Tìm dòng tiêu đề bảng người chơi: Tên, Số trận... Đã thanh toán
+      if (playerHeaderRowIdx === -1) {
+        for (let c = 0; c < row.length; c++) {
+          if ((row[c] || '').trim().toLowerCase() === 'tên') {
+            playerHeaderRowIdx = r;
+            colNameIdx = c;
+            for (let k = c; k < row.length; k++) {
+              const h = (row[k] || '').trim().toLowerCase();
+              if (h.includes('bia')) colBeerIdx = k;
+              if (h.includes('thanh toán') || h.includes('đã tt')) colPaidIdx = k;
+            }
+            break;
+          }
+        }
+      }
+
+      // Đọc các trận đấu (STT 1 -> 50)
+      const stt = parseInt(row[0], 10);
+      if (!isNaN(stt) && stt >= 1 && stt <= 50 && row[1] && row[2] && row[3]) {
+        const team1 = row[1].split('&').map(n => n.trim()).filter(Boolean);
+        const team2 = row[2].split('&').map(n => n.trim()).filter(Boolean);
+        const scoreParts = row[3].split('-').map(s => parseInt(s.trim(), 10));
+        if (scoreParts.length === 2 && !isNaN(scoreParts[0]) && !isNaN(scoreParts[1])) {
+          matches.push({
+            id: stt,
+            team1,
+            team2,
+            score1: scoreParts[0],
+            score2: scoreParts[1],
+            note: row[4] || ''
+          });
+        }
+      }
+    }
+
+    // Đọc danh sách người chơi từ sau dòng tiêu đề
+    if (playerHeaderRowIdx !== -1 && colNameIdx !== -1) {
+      for (let r = playerHeaderRowIdx + 1; r < lines.length; r++) {
+        const row = lines[r];
+        const name = (row[colNameIdx] || '').trim();
+        if (!name || name.toLowerCase().includes('tổng') || name.toLowerCase().includes('còn')) break;
+
+        // Đi bia
+        if (colBeerIdx !== -1 && row[colBeerIdx]) {
+          const beerVal = parseFloat(row[colBeerIdx].replace(/,/g, '').trim());
+          if (!isNaN(beerVal) && beerVal > 0) {
+            beerParticipants.push(name);
+          }
+        }
+
+        // Đã thanh toán
+        if (colPaidIdx !== -1 && row[colPaidIdx]) {
+          const paidStatus = row[colPaidIdx].toLowerCase().trim();
+          if (paidStatus === 'ok' || paidStatus.includes('rồi') || paidStatus.includes('xong')) {
+            paidMembers.push(name);
+          }
+        }
+      }
+    }
+
+    if (matches.length > 0) session.matches = matches;
+    session.expenses = { court, water, balls, beer };
+    if (beerParticipants.length > 0) session.beerParticipants = beerParticipants;
+    session.paidMembers = paidMembers;
+
+    return true;
+  },
+
+  /**
+   * Helper parse chuỗi tiền từ Sheet
+   */
+  parseMoney(val) {
+    if (!val) return 0;
+    const clean = val.replace(/,/g, '').replace(/[^\d.]/g, '').trim();
+    const num = parseFloat(clean);
+    if (isNaN(num)) return 0;
+    return num < 10000 ? num * 1000 : num;
+  },
+
+  /**
+   * Tách dòng CSV có chứa dấu phẩy trong ngoặc kép
+   */
+  parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let insideQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (insideQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (char === ',' && !insideQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
   }
 };
 
