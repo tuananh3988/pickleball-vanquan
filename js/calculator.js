@@ -280,18 +280,22 @@ window.Calculator = {
     });
 
     // 4. Sắp xếp bảng xếp hạng theo yêu cầu người dùng:
-    // "sắp xếp theo tỉ lệ thắng / tổng trận đã thi đấu"
+    // "thay vào đó sắp xếp ai thắng nhiều ở trên. Nếu số trận thắng bằng nhau, thì ai đánh nhiều trận hơn ở trên."
     players.sort((a, b) => {
-      // 1. Tỉ lệ thắng (%) giảm dần
-      if (Math.abs(b.winRate - a.winRate) > 0.01) {
-        return b.winRate - a.winRate;
+      // 1. Thắng nhiều hơn xếp trên
+      if (b.wins !== a.wins) {
+        return b.wins - a.wins;
       }
-      // 2. Nếu bằng tỉ lệ thắng: người nào đấu NHIỀU trận hơn xếp trên
+      // 2. Nếu bằng số trận thắng: ai đánh nhiều trận hơn xếp trên
       if (b.matches !== a.matches) {
         return b.matches - a.matches;
       }
       // 3. Nếu vẫn bằng: xét hiệu số điểm
-      return b.pointDiff - a.pointDiff;
+      if (b.pointDiff !== a.pointDiff) {
+        return b.pointDiff - a.pointDiff;
+      }
+      // 4. Theo tên tiếng Việt
+      return a.name.localeCompare(b.name, 'vi');
     });
 
     // Gán thứ hạng Rank
