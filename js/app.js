@@ -775,11 +775,11 @@ window.App = {
         this.renderLeaderboard();
         this.renderSessionDetail();
         this.renderPairs();
-        if (statusText) statusText.textContent = "Google Sheet Live ✓";
+        if (statusText) statusText.textContent = "Đã cập nhật ✓";
       }
     } catch (e) {
       console.log("Sử dụng dữ liệu tĩnh (offline/cache):", e);
-      if (statusText) statusText.textContent = "Dữ liệu CLB";
+      if (statusText) statusText.textContent = "Đã đồng bộ";
     }
   },
 
