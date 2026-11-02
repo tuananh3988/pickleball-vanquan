@@ -368,6 +368,112 @@
 
   </main>
 
+  <!-- PAYMENT MODAL (POPUP THANH TOÁN TIỀN SÂN / BIA) -->
+  <div id="payment-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
+    <div class="bg-white rounded-2xl max-w-md w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center space-x-2.5">
+          <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Thanh toán tiền buổi chơi</h3>
+            <p class="text-xs text-slate-500 font-medium">Người chơi: <span id="pay-modal-player-name" class="font-bold text-slate-800">Khiêm</span></p>
+          </div>
+        </div>
+        <button onclick="App.closePaymentModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+        
+        <!-- Highlight Card: Số tiền & Tài khoản -->
+        <div class="bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/60 rounded-xl p-3.5 border border-emerald-200/80 text-center space-y-1.5">
+          <p class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Số tiền cần thanh toán</p>
+          <p id="pay-modal-amount" class="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight">271.338 đ</p>
+          <div class="pt-2 border-t border-emerald-200/60 space-y-1 text-xs text-slate-700">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500">Tài khoản nhận:</span>
+              <span class="font-bold">0451000202671 (CAN TUAN ANH)</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500">Ngân hàng:</span>
+              <span class="font-semibold text-slate-800">Vietcombank (VCB)</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500">Nội dung CK:</span>
+              <span id="pay-modal-note" class="font-mono font-bold text-emerald-800">KHIEM PICKLEBALL</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode Switcher Tabs (Mobile: App Ngân hàng | PC: Mã QR) -->
+        <div class="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold">
+          <button id="pay-tab-app" onclick="App.switchPaymentView('app')" class="flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+            <span>Mở App Ngân Hàng</span>
+          </button>
+          <button id="pay-tab-qr" onclick="App.switchPaymentView('qr')" class="flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+            <span>Quét Mã QR</span>
+          </button>
+        </div>
+
+        <!-- VIEW 1: Mở App Ngân Hàng (Mobile) -->
+        <div id="pay-view-app" class="space-y-3 hidden">
+          <p class="text-xs text-slate-500 text-center">
+            Chạm vào ngân hàng của bạn bên dưới để mở app và <strong>tự động điền số tiền, STK, nội dung</strong>:
+          </p>
+          
+          <div id="pay-banks-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1">
+            <p class="font-bold text-slate-700">💡 Hoặc sao chép thủ công:</p>
+            <div class="flex items-center justify-between">
+              <span>STK: <strong class="font-mono text-slate-800">0451000202671</strong></span>
+              <button onclick="App.copyText('0451000202671', 'Đã chép STK: 0451000202671!')" class="text-emerald-700 font-bold hover:underline cursor-pointer">Chép STK</button>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Số tiền: <strong id="pay-copy-amount" class="text-slate-800">271.338đ</strong></span>
+              <button onclick="App.copyCurrentAmount()" class="text-emerald-700 font-bold hover:underline cursor-pointer">Chép số tiền</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: Quét Mã QR (PC / Laptop) -->
+        <div id="pay-view-qr" class="space-y-3 text-center">
+          <p class="text-xs text-slate-500">
+            Dùng app ngân hàng bất kỳ quét mã QR dưới đây. Số tiền và nội dung sẽ <strong>tự động được điền sẵn</strong>!
+          </p>
+
+          <div class="inline-block p-2 bg-white rounded-2xl border border-slate-200 shadow-md">
+            <img id="pay-dynamic-qr-img" src="" alt="Mã QR Chuyển khoản tự động" class="w-60 h-60 sm:w-64 sm:h-64 object-contain rounded-xl mx-auto">
+          </div>
+
+          <div class="text-[11px] text-slate-500 space-y-0.5">
+            <p class="font-semibold text-slate-700">VietQR Napas 247</p>
+            <p class="text-slate-400">Tương thích Vietcombank, Techcombank, MB, BIDV, VPBank, TPBank, MoMo...</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+        <button onclick="App.closePaymentModal()" class="px-4 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+          Đóng
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
     <div class="bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 border border-slate-700">

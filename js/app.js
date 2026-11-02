@@ -32,6 +32,19 @@ window.App = {
     // Mặc định hiển thị tab Chi Tiết Buổi Chơi
     this.switchTab('sessions');
 
+    // Lắng nghe đóng Modal thanh toán khi bấm ra ngoài hoặc phím ESC
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('payment-modal');
+      if (modal && e.target === modal) {
+        this.closePaymentModal();
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closePaymentModal();
+      }
+    });
+
     if (window.lucide) {
       lucide.createIcons();
     }
@@ -524,7 +537,10 @@ window.App = {
                 ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
                     ok
                   </span>`
-                : `<span class="text-slate-300 text-xs font-medium">—</span>`
+                : `<button onclick="App.openPaymentModal('${encodeURIComponent(p.name)}', ${Math.round(p.totalFinal)})" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition shadow-2xs cursor-pointer whitespace-nowrap" title="Bấm để thanh toán ${Calculator.formatCurrency(p.totalFinal)}">
+                    <i data-lucide="qr-code" class="w-3 h-3"></i>
+                    <span>Thanh toán</span>
+                  </button>`
               }
             </td>
           </tr>
@@ -987,6 +1003,178 @@ window.App = {
     }
     values.push(current.trim());
     return values;
+  },
+
+  // ==========================================
+  // CHỨC NĂNG THANH TOÁN (VIETQR & DEEPLINK NGÂN HÀNG)
+  // ==========================================
+
+  currentPaymentData: null,
+
+  /**
+   * Chuyển đổi chuỗi tiếng Việt có dấu thành không dấu để tương thích với nội dung chuyển khoản ngân hàng
+   */
+  removeVietnameseTones(str) {
+    if (!str) return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .trim();
+  },
+
+  /**
+   * Mở Popup thanh toán thông minh cho từng người chơi
+   */
+  openPaymentModal(encodedPlayerName, amount) {
+    const playerName = decodeURIComponent(encodedPlayerName);
+    const cleanAsciiName = this.removeVietnameseTones(playerName).toUpperCase();
+    const note = `${cleanAsciiName} PICKLEBALL`;
+
+    this.currentPaymentData = {
+      name: playerName,
+      amount: amount,
+      note: note
+    };
+
+    // Điền thông tin vào Popup
+    const nameEl = document.getElementById('pay-modal-player-name');
+    if (nameEl) nameEl.textContent = playerName;
+
+    const amountEl = document.getElementById('pay-modal-amount');
+    if (amountEl) amountEl.textContent = Calculator.formatCurrency(amount);
+
+    const copyAmountEl = document.getElementById('pay-copy-amount');
+    if (copyAmountEl) copyAmountEl.textContent = Calculator.formatCurrency(amount);
+
+    const noteEl = document.getElementById('pay-modal-note');
+    if (noteEl) noteEl.textContent = note;
+
+    // Tạo link ảnh VietQR động: tự động điền số tiền, STK, tên người nhận và nội dung
+    const qrImg = document.getElementById('pay-dynamic-qr-img');
+    if (qrImg) {
+      const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
+      qrImg.src = qrUrl;
+    }
+
+    // Render danh sách app ngân hàng nếu chưa có
+    this.renderBankList();
+
+    // Nhận diện thiết bị:
+    // Mobile -> mặc định hiển thị danh sách app ngân hàng (View 1)
+    // PC / Laptop -> mặc định hiển thị mã QR (View 2)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    this.switchPaymentView(isMobile ? 'app' : 'qr');
+
+    // Mở Modal
+    const modal = document.getElementById('payment-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  },
+
+  /**
+   * Đóng Popup thanh toán
+   */
+  closePaymentModal() {
+    const modal = document.getElementById('payment-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  /**
+   * Chuyển đổi tab hiển thị trong Popup (Mở App Ngân hàng vs Quét Mã QR)
+   */
+  switchPaymentView(view) {
+    const tabApp = document.getElementById('pay-tab-app');
+    const tabQr = document.getElementById('pay-tab-qr');
+    const viewApp = document.getElementById('pay-view-app');
+    const viewQr = document.getElementById('pay-view-qr');
+
+    if (view === 'app') {
+      if (tabApp) {
+        tabApp.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white text-emerald-800 font-bold shadow-xs cursor-pointer";
+      }
+      if (tabQr) {
+        tabQr.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900 font-medium cursor-pointer";
+      }
+      if (viewApp) viewApp.classList.remove('hidden');
+      if (viewQr) viewQr.classList.add('hidden');
+    } else {
+      if (tabQr) {
+        tabQr.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white text-emerald-800 font-bold shadow-xs cursor-pointer";
+      }
+      if (tabApp) {
+        tabApp.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900 font-medium cursor-pointer";
+      }
+      if (viewQr) viewQr.classList.remove('hidden');
+      if (viewApp) viewApp.classList.add('hidden');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  },
+
+  /**
+   * Render danh sách các ứng dụng ngân hàng phổ biến tại Việt Nam
+   */
+  renderBankList() {
+    const container = document.getElementById('pay-banks-grid');
+    if (!container || container.children.length > 0) return;
+
+    const banks = [
+      { id: 'vcb', code: 'VCB', name: 'Vietcombank', short: 'VCB Digibank', logo: 'https://api.vietqr.io/img/VCB.png' },
+      { id: 'mb', code: 'MB', name: 'MB Bank', short: 'MBBank', logo: 'https://api.vietqr.io/img/MB.png' },
+      { id: 'tcb', code: 'TCB', name: 'Techcombank', short: 'Techcombank', logo: 'https://api.vietqr.io/img/TCB.png' },
+      { id: 'bidv', code: 'BIDV', name: 'BIDV', short: 'SmartBanking', logo: 'https://api.vietqr.io/img/BIDV.png' },
+      { id: 'icb', code: 'ICB', name: 'VietinBank', short: 'iPay Mobile', logo: 'https://api.vietqr.io/img/ICB.png' },
+      { id: 'vpb', code: 'VPB', name: 'VPBank', short: 'VPBank NEO', logo: 'https://api.vietqr.io/img/VPB.png' },
+      { id: 'tpb', code: 'TPB', name: 'TPBank', short: 'TPBank Mobile', logo: 'https://api.vietqr.io/img/TPB.png' },
+      { id: 'acb', code: 'ACB', name: 'ACB', short: 'ACB ONE', logo: 'https://api.vietqr.io/img/ACB.png' },
+      { id: 'vba', code: 'VBA', name: 'Agribank', short: 'E-Mobile', logo: 'https://api.vietqr.io/img/VBA.png' },
+      { id: 'vib', code: 'VIB', name: 'VIB', short: 'MyVIB 2.0', logo: 'https://api.vietqr.io/img/VIB.png' },
+      { id: 'msb', code: 'MSB', name: 'MSB', short: 'MSB mBank', logo: 'https://api.vietqr.io/img/MSB.png' },
+      { id: 'shb', code: 'SHB', name: 'SHB', short: 'SHB Mobile', logo: 'https://api.vietqr.io/img/SHB.png' },
+      { id: 'ocb', code: 'OCB', name: 'OCB', short: 'OCB OMNI', logo: 'https://api.vietqr.io/img/OCB.png' },
+      { id: 'stb', code: 'STB', name: 'Sacombank', short: 'Sacombank Pay', logo: 'https://api.vietqr.io/img/STB.png' }
+    ];
+
+    container.innerHTML = banks.map(b => `
+      <button onclick="App.openBankApp('${b.id}')" class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 hover:bg-emerald-50/70 border border-slate-200/80 hover:border-emerald-300 transition text-left cursor-pointer active:scale-95 group">
+        <div class="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-100 flex-shrink-0 shadow-2xs">
+          <img src="${b.logo}" alt="${b.name}" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='img/qr-payment.png';">
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold text-slate-800 group-hover:text-emerald-900 truncate">${b.code}</p>
+          <p class="text-[10px] text-slate-400 group-hover:text-emerald-700 truncate">${b.short}</p>
+        </div>
+      </button>
+    `).join('');
+  },
+
+  /**
+   * Mở ứng dụng ngân hàng trên điện thoại (Deep Link VietQR)
+   */
+  openBankApp(appId) {
+    if (!this.currentPaymentData) return;
+    const { amount, note } = this.currentPaymentData;
+    // Chuẩn deeplink VietQR: Tự động điều hướng và điền thông tin chuyển khoản vào App ngân hàng
+    const url = `https://dl.vietqr.io/pay?app=${appId}&ba=0451000202671@vcb&am=${amount}&tn=${encodeURIComponent(note)}`;
+    window.location.href = url;
+  },
+
+  /**
+   * Sao chép số tiền cần thanh toán
+   */
+  copyCurrentAmount() {
+    if (!this.currentPaymentData) return;
+    this.copyText(String(this.currentPaymentData.amount), `Đã chép số tiền: ${Calculator.formatCurrency(this.currentPaymentData.amount)}!`);
   }
 };
 
