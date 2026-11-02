@@ -279,20 +279,22 @@ window.Calculator = {
       };
     });
 
-    // 4. Sắp xếp bảng xếp hạng theo yêu cầu người dùng:
-    // "thay vào đó sắp xếp ai thắng nhiều ở trên. Nếu số trận thắng bằng nhau, thì ai đánh nhiều trận hơn ở trên."
+    // 4. Sắp xếp bảng xếp hạng theo yêu cầu:
+    // Ưu tiên 1: Trận thắng (ai thắng nhiều hơn ở trên)
+    // Ưu tiên 2: Hệ số (ai hệ số cao hơn ở trên)
+    // Ưu tiên 3: Số trận (ai đánh nhiều hơn ở trên)
     players.sort((a, b) => {
-      // 1. Thắng nhiều hơn xếp trên
+      // 1. Trận thắng
       if (b.wins !== a.wins) {
         return b.wins - a.wins;
       }
-      // 2. Nếu bằng số trận thắng: ai đánh nhiều trận hơn xếp trên
-      if (b.matches !== a.matches) {
-        return b.matches - a.matches;
-      }
-      // 3. Nếu vẫn bằng: xét hiệu số điểm
+      // 2. Hệ số (hiệu số điểm thắng - thua)
       if (b.pointDiff !== a.pointDiff) {
         return b.pointDiff - a.pointDiff;
+      }
+      // 3. Số trận (ai đánh nhiều trận hơn ở trên)
+      if (b.matches !== a.matches) {
+        return b.matches - a.matches;
       }
       // 4. Theo tên tiếng Việt
       return a.name.localeCompare(b.name, 'vi');
