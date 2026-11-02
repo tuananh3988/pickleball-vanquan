@@ -121,29 +121,17 @@
     <section id="section-sessions" class="space-y-6">
       
       <!-- Session Header & Selector -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3 sm:p-4 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <span class="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3 sm:p-4 flex items-center">
+        <div class="flex items-center space-x-3 w-full">
+          <span class="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl flex-shrink-0">
             <i data-lucide="calendar" class="w-5 h-5"></i>
           </span>
-          <div class="relative">
-            <select id="session-select" onchange="App.selectSession(this.value)" class="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-base sm:text-lg rounded-xl py-1.5 pl-3 pr-9 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm transition">
+          <div class="relative flex-1 sm:flex-initial">
+            <select id="session-select" onchange="App.selectSession(this.value)" class="w-full sm:w-auto appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 hover:border-slate-400 text-slate-900 font-bold text-sm sm:text-base md:text-lg rounded-xl py-2 pl-3 pr-9 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm transition">
               <!-- Populated dynamically -->
             </select>
             <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           </div>
-        </div>
-
-        <!-- Sync Status Badge & Manual Refresh Button -->
-        <div class="flex items-center space-x-1.5">
-          <button id="btn-sync-refresh" onclick="App.forceRefreshFromSheet()" title="Bấm để đồng bộ dữ liệu mới nhất từ Google Sheet ngay lập tức" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition active:scale-95 cursor-pointer shadow-2xs">
-            <i data-lucide="refresh-cw" id="sync-refresh-icon" class="w-3.5 h-3.5 text-slate-500"></i>
-            <span class="hidden sm:inline text-[11px]">Đồng bộ</span>
-          </button>
-          <span class="inline-flex items-center space-x-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/70 select-none" title="Dữ liệu được lưu trong bộ nhớ máy để tải tức thì 0ms. Tự động kiểm tra sau mỗi 10 phút.">
-            <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span id="sync-status-text">Đã đồng bộ</span>
-          </span>
         </div>
       </div>
 
@@ -411,54 +399,66 @@
           </div>
         </div>
 
-        <!-- Mode Switcher Tabs (Mobile: App Ngân hàng | PC: Mã QR) -->
-        <div class="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold">
-          <button id="pay-tab-app" onclick="App.switchPaymentView('app')" class="flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900 cursor-pointer">
-            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-            <span>Mở App Ngân Hàng</span>
-          </button>
-          <button id="pay-tab-qr" onclick="App.switchPaymentView('qr')" class="flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white text-emerald-800 shadow-xs cursor-pointer">
-            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
-            <span>Quét Mã QR</span>
-          </button>
+        <!-- MÃ QR THANH TOÁN TỰ ĐỘNG -->
+        <div class="text-center space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+          <div class="inline-block p-2 bg-white rounded-xl border border-slate-200 shadow-xs">
+            <img id="pay-dynamic-qr-img" src="" alt="Mã QR Chuyển khoản tự động" class="w-52 h-52 sm:w-56 sm:h-56 object-contain rounded-lg mx-auto">
+          </div>
+
+          <!-- Nút Tải ảnh QR (Giải pháp hoàn hảo nhất cho Mobile) -->
+          <div class="space-y-1.5">
+            <button onclick="App.downloadQRCode()" class="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm active:scale-98 transition flex items-center justify-center space-x-2 cursor-pointer">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Tải ảnh QR về máy (để quét tự động)</span>
+            </button>
+            <p class="text-[11px] text-slate-500 leading-relaxed text-left bg-white p-2.5 rounded-lg border border-slate-200/70">
+              💡 <strong>Cách tự điền số tiền 100% trên điện thoại:</strong><br>
+              1. Bấm nút <strong>Tải ảnh QR</strong> ở trên (hoặc nhấn giữ ảnh QR để lưu).<br>
+              2. Mở app ngân hàng ➔ Chọn <strong>Quét QR</strong> ➔ Bấm <strong>Chọn ảnh từ Thư viện</strong>. Toàn bộ số tiền và nội dung sẽ tự động điền sẵn!
+            </p>
+          </div>
         </div>
 
-        <!-- VIEW 1: Mở App Ngân Hàng (Mobile) -->
-        <div id="pay-view-app" class="space-y-3 hidden">
-          <p class="text-xs text-slate-500 text-center">
-            Chạm vào ngân hàng của bạn bên dưới để mở app và <strong>tự động điền số tiền, STK, nội dung</strong>:
-          </p>
+        <!-- SAO CHÉP THỦ CÔNG NHANH (1 CHẠM) -->
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+          <p class="font-bold text-slate-700 text-[11px] uppercase tracking-wider">Hoặc sao chép thông tin:</p>
           
-          <div id="pay-banks-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
-            <!-- Rendered dynamically -->
+          <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80">
+            <div>
+              <p class="text-[10px] text-slate-400">Số tài khoản Vietcombank</p>
+              <p class="font-mono font-bold text-slate-800 text-xs">0451000202671</p>
+            </div>
+            <button onclick="App.copyText('0451000202671', 'Đã sao chép STK: 0451000202671!')" class="px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md transition cursor-pointer">
+              Sao chép
+            </button>
           </div>
 
-          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 space-y-1">
-            <p class="font-bold text-slate-700">💡 Hoặc sao chép thủ công:</p>
-            <div class="flex items-center justify-between">
-              <span>STK: <strong class="font-mono text-slate-800">0451000202671</strong></span>
-              <button onclick="App.copyText('0451000202671', 'Đã chép STK: 0451000202671!')" class="text-emerald-700 font-bold hover:underline cursor-pointer">Chép STK</button>
+          <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80">
+            <div>
+              <p class="text-[10px] text-slate-400">Số tiền cần chuyển</p>
+              <p id="pay-copy-amount" class="font-bold text-slate-800 text-xs">271.338 đ</p>
             </div>
-            <div class="flex items-center justify-between">
-              <span>Số tiền: <strong id="pay-copy-amount" class="text-slate-800">271.338đ</strong></span>
-              <button onclick="App.copyCurrentAmount()" class="text-emerald-700 font-bold hover:underline cursor-pointer">Chép số tiền</button>
+            <button onclick="App.copyCurrentAmount()" class="px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md transition cursor-pointer">
+              Sao chép
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80">
+            <div>
+              <p class="text-[10px] text-slate-400">Nội dung chuyển khoản</p>
+              <p id="pay-copy-note" class="font-mono font-bold text-emerald-800 text-xs">KHIEM PICKLEBALL</p>
             </div>
+            <button onclick="App.copyCurrentNote()" class="px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md transition cursor-pointer">
+              Sao chép
+            </button>
           </div>
         </div>
 
-        <!-- VIEW 2: Quét Mã QR (PC / Laptop) -->
-        <div id="pay-view-qr" class="space-y-3 text-center">
-          <p class="text-xs text-slate-500">
-            Dùng app ngân hàng bất kỳ quét mã QR dưới đây. Số tiền và nội dung sẽ <strong>tự động được điền sẵn</strong>!
-          </p>
-
-          <div class="inline-block p-2 bg-white rounded-2xl border border-slate-200 shadow-md">
-            <img id="pay-dynamic-qr-img" src="" alt="Mã QR Chuyển khoản tự động" class="w-60 h-60 sm:w-64 sm:h-64 object-contain rounded-xl mx-auto">
-          </div>
-
-          <div class="text-[11px] text-slate-500 space-y-0.5">
-            <p class="font-semibold text-slate-700">VietQR Napas 247</p>
-            <p class="text-slate-400">Tương thích Vietcombank, Techcombank, MB, BIDV, VPBank, TPBank, MoMo...</p>
+        <!-- MỞ NHANH ỨNG DỤNG NGÂN HÀNG -->
+        <div class="space-y-2">
+          <p class="text-xs font-bold text-slate-700">Mở nhanh ứng dụng ngân hàng (tự chép STK):</p>
+          <div id="pay-banks-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 

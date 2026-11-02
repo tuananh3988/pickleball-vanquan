@@ -1052,7 +1052,10 @@ window.App = {
     const noteEl = document.getElementById('pay-modal-note');
     if (noteEl) noteEl.textContent = note;
 
-    // Tạo link ảnh VietQR động: tự động điền số tiền, STK, tên người nhận và nội dung
+    const copyNoteEl = document.getElementById('pay-copy-note');
+    if (copyNoteEl) copyNoteEl.textContent = note;
+
+    // Tạo link ảnh VietQR động: nhúng sẵn số tiền, STK, tên người nhận và nội dung
     const qrImg = document.getElementById('pay-dynamic-qr-img');
     if (qrImg) {
       const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
@@ -1061,12 +1064,6 @@ window.App = {
 
     // Render danh sách app ngân hàng nếu chưa có
     this.renderBankList();
-
-    // Nhận diện thiết bị:
-    // Mobile -> mặc định hiển thị danh sách app ngân hàng (View 1)
-    // PC / Laptop -> mặc định hiển thị mã QR (View 2)
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-    this.switchPaymentView(isMobile ? 'app' : 'qr');
 
     // Mở Modal
     const modal = document.getElementById('payment-modal');
@@ -1090,35 +1087,30 @@ window.App = {
   },
 
   /**
-   * Chuyển đổi tab hiển thị trong Popup (Mở App Ngân hàng vs Quét Mã QR)
+   * Tải ảnh mã QR động về điện thoại/máy tính để quét từ thư viện ảnh
    */
-  switchPaymentView(view) {
-    const tabApp = document.getElementById('pay-tab-app');
-    const tabQr = document.getElementById('pay-tab-qr');
-    const viewApp = document.getElementById('pay-view-app');
-    const viewQr = document.getElementById('pay-view-qr');
+  async downloadQRCode() {
+    if (!this.currentPaymentData) return;
+    const { amount, note, name } = this.currentPaymentData;
+    const qrUrl = `https://img.vietqr.io/image/970436-0451000202671-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(note)}&accountName=CAN%20TUAN%20ANH`;
 
-    if (view === 'app') {
-      if (tabApp) {
-        tabApp.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white text-emerald-800 font-bold shadow-xs cursor-pointer";
-      }
-      if (tabQr) {
-        tabQr.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900 font-medium cursor-pointer";
-      }
-      if (viewApp) viewApp.classList.remove('hidden');
-      if (viewQr) viewQr.classList.add('hidden');
-    } else {
-      if (tabQr) {
-        tabQr.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white text-emerald-800 font-bold shadow-xs cursor-pointer";
-      }
-      if (tabApp) {
-        tabApp.className = "flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center space-x-1.5 text-slate-600 hover:text-slate-900 font-medium cursor-pointer";
-      }
-      if (viewQr) viewQr.classList.remove('hidden');
-      if (viewApp) viewApp.classList.add('hidden');
+    try {
+      this.showToast("Đang tải ảnh mã QR...");
+      const res = await fetch(qrUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `VietQR_${this.removeVietnameseTones(name).replace(/\s+/g, '')}_${amount}d.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      this.showToast("✓ Đã tải ảnh QR! Mở app ngân hàng -> Quét QR -> Chọn ảnh từ thư viện.");
+    } catch (e) {
+      window.open(qrUrl, '_blank');
+      this.showToast("Đã mở ảnh QR. Bạn nhấn giữ ảnh để Lưu vào Thư viện!");
     }
-
-    if (window.lucide) lucide.createIcons();
   },
 
   /**
@@ -1146,8 +1138,8 @@ window.App = {
     ];
 
     container.innerHTML = banks.map(b => `
-      <button onclick="App.openBankApp('${b.id}')" class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 hover:bg-emerald-50/70 border border-slate-200/80 hover:border-emerald-300 transition text-left cursor-pointer active:scale-95 group">
-        <div class="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center border border-slate-100 flex-shrink-0 shadow-2xs">
+      <button onclick="App.openBankApp('${b.id}', '${b.name}')" class="flex items-center space-x-2 p-1.5 sm:p-2 rounded-xl bg-white hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-300 transition text-left cursor-pointer active:scale-95 group shadow-2xs">
+        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-50 p-1 flex items-center justify-center border border-slate-100 flex-shrink-0">
           <img src="${b.logo}" alt="${b.name}" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='img/qr-payment.png';">
         </div>
         <div class="min-w-0 flex-1">
@@ -1159,14 +1151,23 @@ window.App = {
   },
 
   /**
-   * Mở ứng dụng ngân hàng trên điện thoại (Deep Link VietQR)
+   * Mở ứng dụng ngân hàng và tự động sao chép STK
    */
-  openBankApp(appId) {
+  openBankApp(appId, bankName) {
     if (!this.currentPaymentData) return;
     const { amount, note } = this.currentPaymentData;
-    // Chuẩn deeplink VietQR: Tự động điều hướng và điền thông tin chuyển khoản vào App ngân hàng
+
+    // Tự động sao chép STK vào Clipboard để dán nếu ngân hàng không hỗ trợ tự điền
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText('0451000202671').catch(() => {});
+    }
+
+    this.showToast(`✓ Đã sao chép STK: 0451000202671. Đang mở ${bankName || 'ngân hàng'}...`);
+
     const url = `https://dl.vietqr.io/pay?app=${appId}&ba=0451000202671@vcb&am=${amount}&tn=${encodeURIComponent(note)}`;
-    window.location.href = url;
+    setTimeout(() => {
+      window.location.href = url;
+    }, 350);
   },
 
   /**
@@ -1174,7 +1175,15 @@ window.App = {
    */
   copyCurrentAmount() {
     if (!this.currentPaymentData) return;
-    this.copyText(String(this.currentPaymentData.amount), `Đã chép số tiền: ${Calculator.formatCurrency(this.currentPaymentData.amount)}!`);
+    this.copyText(String(this.currentPaymentData.amount), `Đã sao chép số tiền: ${Calculator.formatCurrency(this.currentPaymentData.amount)}!`);
+  },
+
+  /**
+   * Sao chép nội dung chuyển khoản
+   */
+  copyCurrentNote() {
+    if (!this.currentPaymentData) return;
+    this.copyText(this.currentPaymentData.note, `Đã sao chép nội dung: ${this.currentPaymentData.note}!`);
   }
 };
 
