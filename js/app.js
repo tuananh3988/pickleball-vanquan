@@ -1164,47 +1164,51 @@ window.App = {
     if (!this.currentPaymentData) return;
 
     if (!navigator.clipboard || !window.ClipboardItem) {
-      this.showToast("Trình duyệt không hỗ trợ sao chép ảnh trực tiếp. Bạn vui lòng bấm 'Tải ảnh QR về máy' nhé!");
+      this.showToast("Trình duyệt không hỗ trợ sao chép ảnh. Bạn hãy nhấn giữ ảnh QR để chép hoặc tải ảnh về nhé!");
       return;
     }
 
     this.showToast("Đang sao chép ảnh mã QR...");
 
     try {
-      // Trường hợp 1: Đã có sẵn blob trong bộ nhớ (tải trước lúc mở popup) -> Sao chép tức thì trong click event!
-      if (this.currentQRBlob) {
-        const item = new ClipboardItem({ 'image/png': this.currentQRBlob });
-        await navigator.clipboard.write([item]);
-        this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
-        return;
+      // Trường hợp 1: Đã có sẵn blob trong bộ nhớ (tải trước lúc mở popup)
+      let blob = this.currentQRBlob;
+
+      // Nếu chưa có blob (chưa tải xong hoặc lỗi proxy), fetch ngay
+      if (!blob) {
+        const proxyUrl = this.getQRProxyUrl();
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        blob = await res.blob();
+        this.currentQRBlob = blob;
       }
 
-      // Trường hợp 2: Chưa tải xong blob, fetch ngay qua proxy
-      const proxyUrl = this.getQRProxyUrl();
-      const blobPromise = fetch(proxyUrl)
-        .then(res => {
-          if (!res.ok) throw new Error("Proxy error: " + res.status);
-          return res.blob();
-        })
-        .then(b => b.type === 'image/png' ? b : new Blob([b], { type: 'image/png' }));
+      // Đảm bảo là PNG blob
+      const pngBlob = blob.type === 'image/png' ? blob : new Blob([await blob.arrayBuffer()], { type: 'image/png' });
 
-      // Thử truyền trực tiếp Promise vào ClipboardItem (chuẩn Safari iOS)
+      // Thử ghi trực tiếp vào clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': pngBlob })
+      ]);
+
+      this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+    } catch (err) {
+      console.warn("Lỗi khi sao chép ảnh vào clipboard:", err);
+      // Fallback: Thử truyền Promise trực tiếp vào ClipboardItem (Safari iOS)
       try {
+        const proxyUrl = this.getQRProxyUrl();
+        const blobPromise = fetch(proxyUrl)
+          .then(r => r.blob())
+          .then(b => b.type === 'image/png' ? b : new Blob([b], { type: 'image/png' }));
         const item = new ClipboardItem({ 'image/png': blobPromise });
         await navigator.clipboard.write([item]);
         this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
         return;
-      } catch (safariErr) {
-        // Fallback cho trình duyệt cần await blob (Android Chrome)
-        const blob = await blobPromise;
-        this.currentQRBlob = blob;
-        const item = new ClipboardItem({ 'image/png': blob });
-        await navigator.clipboard.write([item]);
-        this.showToast("✓ Đã sao chép ảnh mã QR! Bạn vào App ngân hàng bấm 'Dán ảnh' để quét.");
+      } catch (err2) {
+        console.warn("Lỗi fallback ClipboardItem promise:", err2);
       }
-    } catch (err) {
-      console.error("Lỗi khi sao chép ảnh vào clipboard:", err);
-      this.showToast("Không thể sao chép ảnh vào bộ nhớ tạm. Bạn vui lòng bấm 'Tải ảnh QR về máy' nhé!");
+
+      this.showToast("Trình duyệt chặn sao chép tự động. Bạn hãy nhấn giữ ảnh QR để chép hoặc bấm 'Tải ảnh QR' nhé!");
     }
   },
 
