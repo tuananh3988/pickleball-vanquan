@@ -16,6 +16,7 @@ window.PICKLEBALL_DATA = {
       name: "Buổi thi đấu ngày 01/11/2026",
       date: "2026-11-01",
       location: "Sân Pickleball Văn Quán",
+      sheetGid: "1710743855",
       expenses: {
         court: 400000,   // Tiền sân (400k)
         water: 375000,   // Tiền nước (375k)
@@ -56,6 +57,7 @@ window.PICKLEBALL_DATA = {
       name: "Buổi thi đấu ngày 08/11/2026",
       date: "2026-11-08",
       location: "Sân Pickleball Văn Quán",
+      sheetGid: "1030549909",
       expenses: {
         court: 400000,   // Tiền sân (400k)
         water: 250000,   // Tiền nước (250k)

@@ -373,6 +373,7 @@ window.App = {
   selectSession(sessionId) {
     this.currentSessionId = sessionId;
     this.renderSessionDetail();
+    this.syncLiveFromGoogleSheet(false);
   },
 
   /**
@@ -932,10 +933,13 @@ window.App = {
    */
   restoreFromCache() {
     try {
-      const cachedCSV = localStorage.getItem('PICKLEBALL_CACHE_CSV');
-      if (cachedCSV && cachedCSV.length > 50) {
-        this.applyGoogleSheetCSV(cachedCSV);
-      }
+      const sessions = window.PICKLEBALL_DATA.sessions || [];
+      sessions.forEach(s => {
+        const cachedCSV = localStorage.getItem(`PICKLEBALL_CACHE_CSV_${s.id}`) || (s.id === 'session-2026-11-01' ? localStorage.getItem('PICKLEBALL_CACHE_CSV') : null);
+        if (cachedCSV && cachedCSV.length > 50) {
+          this.applyGoogleSheetCSV(cachedCSV, s.id);
+        }
+      });
     } catch (e) {
       console.warn("Không thể đọc cache trình duyệt:", e);
     }
@@ -949,20 +953,23 @@ window.App = {
     const sheetId = window.PICKLEBALL_DATA ? window.PICKLEBALL_DATA.googleSheetId : null;
     if (!sheetId) return;
 
-    const CACHE_KEY_CSV = 'PICKLEBALL_CACHE_CSV';
-    const CACHE_KEY_TIME = 'PICKLEBALL_CACHE_TIME';
-    const CACHE_TTL_MS = 10 * 60 * 1000; // 10 phút
-
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
     const statusText = document.getElementById('sync-status-text');
     const refreshIcon = document.getElementById('sync-refresh-icon');
 
-    // Kiểm tra thời hạn cache
-    const cachedTime = parseInt(localStorage.getItem(CACHE_KEY_TIME) || '0', 10);
-    const cachedCSV = localStorage.getItem(CACHE_KEY_CSV);
     const now = Date.now();
+    const CACHE_TTL_MS = 10 * 60 * 1000; // 10 phút
 
-    // Nếu không bấm ép làm mới và cache vẫn còn hạn 10 phút -> KHÔNG tải lại để tối ưu tốc độ
-    if (!forceRefresh && cachedCSV && (now - cachedTime < CACHE_TTL_MS)) {
+    // Lọc các session cần cập nhật
+    const sessionsToSync = sessions.filter(s => {
+      if (!s.sheetGid) return false;
+      if (forceRefresh) return true;
+      const cachedTime = parseInt(localStorage.getItem(`PICKLEBALL_CACHE_TIME_${s.id}`) || '0', 10);
+      const cachedCSV = localStorage.getItem(`PICKLEBALL_CACHE_CSV_${s.id}`);
+      return !cachedCSV || (now - cachedTime >= CACHE_TTL_MS);
+    });
+
+    if (sessionsToSync.length === 0) {
       if (statusText) statusText.textContent = "Đã đồng bộ";
       return;
     }
@@ -971,47 +978,47 @@ window.App = {
     if (refreshIcon) refreshIcon.classList.add('animate-spin');
     if (statusText) statusText.textContent = "Đang kiểm tra...";
 
-    const sessions = window.PICKLEBALL_DATA.sessions || [];
-    const currentSession = sessions.find(s => s.id === this.currentSessionId) || sessions[sessions.length - 1];
-    const gidParam = (currentSession && currentSession.sheetGid) ? `&gid=${currentSession.sheetGid}` : '';
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}&t=${now}`;
+    let anyUpdated = false;
 
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Phản hồi lỗi: " + response.status);
-      const csvText = await response.text();
-      if (!csvText || csvText.length < 50) throw new Error("Dữ liệu rỗng");
+    await Promise.all(sessionsToSync.map(async (s) => {
+      const sId = s.id;
+      const CACHE_KEY_CSV = `PICKLEBALL_CACHE_CSV_${sId}`;
+      const CACHE_KEY_TIME = `PICKLEBALL_CACHE_TIME_${sId}`;
+      const cachedCSV = localStorage.getItem(CACHE_KEY_CSV);
+      const gidParam = s.sheetGid ? `&gid=${s.sheetGid}` : '';
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}&t=${now}`;
 
-      // So sánh nội dung mới với bản lưu trước đó xem có cập nhật mới không
-      const isChanged = (csvText !== cachedCSV);
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return;
+        const csvText = await response.text();
+        if (!csvText || csvText.length < 50) return;
 
-      // Cập nhật bộ nhớ cache máy
-      localStorage.setItem(CACHE_KEY_CSV, csvText);
-      localStorage.setItem(CACHE_KEY_TIME, String(Date.now()));
+        const isChanged = (csvText !== cachedCSV);
+        localStorage.setItem(CACHE_KEY_CSV, csvText);
+        localStorage.setItem(CACHE_KEY_TIME, String(Date.now()));
 
-      if (isChanged || forceRefresh) {
-        const updated = this.applyGoogleSheetCSV(csvText);
-        if (updated) {
-          this.renderLeaderboard();
-          this.renderSessionDetail();
-          this.renderPairs();
-          this.renderBeerLeaderboard();
-          if (forceRefresh) {
-            this.showToast("✓ Đã cập nhật dữ liệu mới nhất từ Google Sheet!");
-          }
+        if (isChanged || forceRefresh) {
+          const updated = this.applyGoogleSheetCSV(csvText, sId);
+          if (updated) anyUpdated = true;
         }
+      } catch (err) {
+        console.warn(`Lỗi đồng bộ ${sId}:`, err);
       }
+    }));
 
-      if (statusText) statusText.textContent = "Đã cập nhật ✓";
-    } catch (e) {
-      console.log("Sử dụng dữ liệu tĩnh (offline/cache):", e);
-      if (statusText) statusText.textContent = "Đã đồng bộ";
+    if (anyUpdated) {
+      this.renderLeaderboard();
+      this.renderSessionDetail();
+      this.renderPairs();
+      this.renderBeerLeaderboard();
       if (forceRefresh) {
-        this.showToast("Không thể tải Google Sheet, đang dùng dữ liệu offline.");
+        this.showToast("✓ Đã cập nhật dữ liệu mới nhất từ Google Sheet!");
       }
-    } finally {
-      if (refreshIcon) refreshIcon.classList.remove('animate-spin');
     }
+
+    if (statusText) statusText.textContent = "Đã cập nhật ✓";
+    if (refreshIcon) refreshIcon.classList.remove('animate-spin');
   },
 
   /**
@@ -1024,7 +1031,7 @@ window.App = {
   /**
    * Phân tích nội dung CSV từ Google Sheet và cập nhật vào dữ liệu buổi chơi
    */
-  applyGoogleSheetCSV(csvText) {
+  applyGoogleSheetCSV(csvText, targetSessionId = null) {
     const lines = csvText.split(/\r?\n/).map(l => this.parseCSVLine(l));
     if (lines.length < 5) return false;
 
@@ -1048,23 +1055,25 @@ window.App = {
 
       // Tìm thông tin chi phí
       for (let c = 0; c < row.length; c++) {
-        const cell = (row[c] || '').toLowerCase().trim();
-        if (cell === 'sân' && row[c + 1]) court = this.parseMoney(row[c + 1]);
-        if (cell === 'nước' && row[c + 1]) water = this.parseMoney(row[c + 1]);
-        if (cell === 'bóng' && row[c + 1]) balls = this.parseMoney(row[c + 1]);
+        const cell = (row[c] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        if (cell === 'san' && row[c + 1]) court = this.parseMoney(row[c + 1]);
+        if (cell === 'nuoc' && row[c + 1]) water = this.parseMoney(row[c + 1]);
+        if (cell === 'bong' && row[c + 1]) balls = this.parseMoney(row[c + 1]);
         if (cell === 'bia' && row[c + 1]) beer = this.parseMoney(row[c + 1]);
       }
 
       // Tìm dòng tiêu đề bảng người chơi: Tên, Số trận... Đã thanh toán
       if (playerHeaderRowIdx === -1) {
         for (let c = 0; c < row.length; c++) {
-          if ((row[c] || '').trim().toLowerCase() === 'tên') {
+          const rawHeader = (row[c] || '').trim();
+          const cleanH = rawHeader.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          if (cleanH === 'ten' || cleanH === 'name' || cleanH.includes('vdv')) {
             playerHeaderRowIdx = r;
             colNameIdx = c;
             for (let k = c; k < row.length; k++) {
-              const h = (row[k] || '').trim().toLowerCase();
-              if (h.includes('bia')) colBeerIdx = k;
-              if (h.includes('thanh toán') || h.includes('đã tt')) colPaidIdx = k;
+              const hClean = (row[k] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+              if (hClean.includes('bia')) colBeerIdx = k;
+              if (hClean.includes('thanh toan') || hClean.includes('tt') || hClean.includes('paid')) colPaidIdx = k;
             }
             break;
           }
@@ -1095,7 +1104,8 @@ window.App = {
       for (let r = playerHeaderRowIdx + 1; r < lines.length; r++) {
         const row = lines[r];
         const name = (row[colNameIdx] || '').trim();
-        if (!name || name.toLowerCase().includes('tổng') || name.toLowerCase().includes('còn')) break;
+        const cleanName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        if (!name || cleanName.includes('tong') || cleanName.includes('con') || cleanName.includes('so nguoi')) break;
         playerNames.push(name);
 
         // Đi bia
@@ -1108,8 +1118,8 @@ window.App = {
 
         // Đã thanh toán
         if (colPaidIdx !== -1 && row[colPaidIdx]) {
-          const paidStatus = row[colPaidIdx].toLowerCase().trim();
-          if (paidStatus === 'ok' || paidStatus.includes('rồi') || paidStatus.includes('xong')) {
+          const cleanPaid = (row[colPaidIdx] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+          if (cleanPaid === 'ok' || cleanPaid.includes('roi') || cleanPaid.includes('xong') || cleanPaid === 'x' || cleanPaid === 'v' || cleanPaid === 'yes') {
             paidMembers.push(name);
           }
         }
@@ -1120,13 +1130,19 @@ window.App = {
     const sessions = window.PICKLEBALL_DATA.sessions || [];
     let session = null;
 
-    const hasWeek2Players = playerNames.some(n => ['Tín', 'Vững', 'Đức', 'Hưng'].includes(n));
-    const hasWeek1Players = playerNames.some(n => ['Đạt', 'Luân', 'Khiêm', 'HAnh'].includes(n));
+    if (targetSessionId) {
+      session = sessions.find(s => s.id === targetSessionId);
+    }
 
-    if (hasWeek2Players) {
-      session = sessions.find(s => s.id === 'session-2026-11-08');
-    } else if (hasWeek1Players) {
-      session = sessions.find(s => s.id === 'session-2026-11-01');
+    if (!session) {
+      const hasWeek2Players = playerNames.some(n => ['Tín', 'Vững', 'Đức', 'Hưng'].includes(n));
+      const hasWeek1Players = playerNames.some(n => ['Đạt', 'Luân', 'Khiêm', 'HAnh'].includes(n));
+
+      if (hasWeek2Players) {
+        session = sessions.find(s => s.id === 'session-2026-11-08');
+      } else if (hasWeek1Players) {
+        session = sessions.find(s => s.id === 'session-2026-11-01');
+      }
     }
 
     if (!session) {
