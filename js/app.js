@@ -359,7 +359,9 @@ window.App = {
     if (!select) return;
 
     const sessions = window.PICKLEBALL_DATA.sessions || [];
-    select.innerHTML = sessions.map(s => {
+    // Hiển thị buổi mới nhất lên đầu danh sách chọn
+    const reversed = [...sessions].reverse();
+    select.innerHTML = reversed.map(s => {
       const isSelected = s.id === this.currentSessionId ? 'selected' : '';
       return `<option value="${s.id}" ${isSelected}>${s.name}</option>`;
     }).join('');
@@ -969,7 +971,10 @@ window.App = {
     if (refreshIcon) refreshIcon.classList.add('animate-spin');
     if (statusText) statusText.textContent = "Đang kiểm tra...";
 
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${now}`;
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
+    const currentSession = sessions.find(s => s.id === this.currentSessionId) || sessions[sessions.length - 1];
+    const gidParam = (currentSession && currentSession.sheetGid) ? `&gid=${currentSession.sheetGid}` : '';
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}&t=${now}`;
 
     try {
       const response = await fetch(url);
@@ -1023,17 +1028,15 @@ window.App = {
     const lines = csvText.split(/\r?\n/).map(l => this.parseCSVLine(l));
     if (lines.length < 5) return false;
 
-    const session = (window.PICKLEBALL_DATA.sessions || [])[0];
-    if (!session) return false;
-
-    let court = session.expenses.court;
-    let water = session.expenses.water;
-    let balls = session.expenses.balls;
-    let beer = session.expenses.beer;
+    let court = null;
+    let water = null;
+    let balls = null;
+    let beer = null;
 
     const matches = [];
     const paidMembers = [];
     const beerParticipants = [];
+    const playerNames = [];
 
     let playerHeaderRowIdx = -1;
     let colNameIdx = -1;
@@ -1093,6 +1096,7 @@ window.App = {
         const row = lines[r];
         const name = (row[colNameIdx] || '').trim();
         if (!name || name.toLowerCase().includes('tổng') || name.toLowerCase().includes('còn')) break;
+        playerNames.push(name);
 
         // Đi bia
         if (colBeerIdx !== -1 && row[colBeerIdx]) {
@@ -1112,9 +1116,32 @@ window.App = {
       }
     }
 
+    // Nhận diện session tương ứng để cập nhật
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
+    let session = null;
+
+    const hasWeek2Players = playerNames.some(n => ['Tín', 'Vững', 'Đức', 'Hưng'].includes(n));
+    const hasWeek1Players = playerNames.some(n => ['Đạt', 'Luân', 'Khiêm', 'HAnh'].includes(n));
+
+    if (hasWeek2Players) {
+      session = sessions.find(s => s.id === 'session-2026-11-08');
+    } else if (hasWeek1Players) {
+      session = sessions.find(s => s.id === 'session-2026-11-01');
+    }
+
+    if (!session) {
+      session = sessions.find(s => s.id === this.currentSessionId) || sessions[0];
+    }
+    if (!session) return false;
+
     if (matches.length > 0) session.matches = matches;
-    session.expenses = { court, water, balls, beer };
-    if (beerParticipants.length > 0) session.beerParticipants = beerParticipants;
+    session.expenses = {
+      court: court !== null ? court : (session.expenses?.court || 0),
+      water: water !== null ? water : (session.expenses?.water || 0),
+      balls: balls !== null ? balls : (session.expenses?.balls || 0),
+      beer: beer !== null ? beer : (session.expenses?.beer || 0)
+    };
+    session.beerParticipants = beerParticipants;
     session.paidMembers = paidMembers;
 
     return true;
