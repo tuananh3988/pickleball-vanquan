@@ -66,8 +66,10 @@ window.PICKLEBALL_DATA = {
       },
       // Danh sách người tham gia tăng 2 (uống bia)
       beerParticipants: [],
-      // Danh sách thành viên đã thanh toán tiền buổi này
-      paidMembers: [],
+      // Danh sách thành viên đã thanh toán tiền buổi này (đồng bộ từ Google Sheets)
+      paidMembers: [
+        "Tùng 86", "Tùng", "Vững", "Đức", "Tín"
+      ],
       // Danh sách 14 trận đôi của buổi 08/11/2026
       matches: [
         { id: 1, team1: ["Bình", "Đức"], team2: ["Hưng", "Cường"], score1: 11, score2: 8, note: "" },

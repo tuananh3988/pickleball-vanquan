@@ -50,8 +50,18 @@ window.App = {
       lucide.createIcons();
     }
 
-    // 2. Tự động kiểm tra Google Sheet (chỉ tải khi cache hết hạn 10 phút)
+    // 2. Tự động kiểm tra Google Sheet ngay khi tải xong
     this.syncLiveFromGoogleSheet(false);
+
+    // 3. Tự động kiểm tra Google Sheet khi người dùng chuyển lại tab này
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.syncLiveFromGoogleSheet(false);
+      }
+    });
+    window.addEventListener('focus', () => {
+      this.syncLiveFromGoogleSheet(false);
+    });
   },
 
   /**
@@ -946,8 +956,8 @@ window.App = {
   },
 
   /**
-   * Đồng bộ dữ liệu từ Google Sheets với cơ chế Smart Cache (Hạn 10 phút, tự kiểm tra thay đổi)
-   * @param {boolean} forceRefresh - Bắt buộc tải lại bản mới bỏ qua hạn cache
+   * Đồng bộ dữ liệu trực tiếp từ Google Sheets (chạy ngầm tức thì, không bị khóa cache 10 phút)
+   * @param {boolean} forceRefresh - Bắt buộc tải lại bản mới bỏ qua cache
    */
   async syncLiveFromGoogleSheet(forceRefresh = false) {
     const sheetId = window.PICKLEBALL_DATA ? window.PICKLEBALL_DATA.googleSheetId : null;
@@ -957,28 +967,15 @@ window.App = {
     const statusText = document.getElementById('sync-status-text');
     const refreshIcon = document.getElementById('sync-refresh-icon');
 
-    const now = Date.now();
-    const CACHE_TTL_MS = 10 * 60 * 1000; // 10 phút
-
-    // Lọc các session cần cập nhật
-    const sessionsToSync = sessions.filter(s => {
-      if (!s.sheetGid) return false;
-      if (forceRefresh) return true;
-      const cachedTime = parseInt(localStorage.getItem(`PICKLEBALL_CACHE_TIME_${s.id}`) || '0', 10);
-      const cachedCSV = localStorage.getItem(`PICKLEBALL_CACHE_CSV_${s.id}`);
-      return !cachedCSV || (now - cachedTime >= CACHE_TTL_MS);
-    });
-
-    if (sessionsToSync.length === 0) {
-      if (statusText) statusText.textContent = "Đã đồng bộ";
-      return;
-    }
+    const sessionsToSync = sessions.filter(s => !!s.sheetGid);
+    if (sessionsToSync.length === 0) return;
 
     // Hiệu ứng đang tải xoay tròn
     if (refreshIcon) refreshIcon.classList.add('animate-spin');
-    if (statusText) statusText.textContent = "Đang kiểm tra...";
+    if (statusText) statusText.textContent = "Đang đồng bộ...";
 
     let anyUpdated = false;
+    const now = Date.now();
 
     await Promise.all(sessionsToSync.map(async (s) => {
       const sId = s.id;
@@ -989,14 +986,14 @@ window.App = {
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}&t=${now}`;
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) return;
         const csvText = await response.text();
         if (!csvText || csvText.length < 50) return;
 
         const isChanged = (csvText !== cachedCSV);
         localStorage.setItem(CACHE_KEY_CSV, csvText);
-        localStorage.setItem(CACHE_KEY_TIME, String(Date.now()));
+        localStorage.setItem(CACHE_KEY_TIME, String(now));
 
         if (isChanged || forceRefresh) {
           const updated = this.applyGoogleSheetCSV(csvText, sId);
@@ -1017,8 +1014,14 @@ window.App = {
       }
     }
 
-    if (statusText) statusText.textContent = "Đã cập nhật ✓";
+    if (statusText) statusText.textContent = "Đã đồng bộ ✓";
     if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+
+    setTimeout(() => {
+      if (statusText && statusText.textContent === "Đã đồng bộ ✓") {
+        statusText.textContent = "Đồng bộ Sheet";
+      }
+    }, 2500);
   },
 
   /**
