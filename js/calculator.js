@@ -82,19 +82,19 @@ window.Calculator = {
 
     // 4. Tính tiền Bia
     const totalBeerExpense = exp.beer || 0;
-    const beerParticipants = (session.beerParticipants || []).map(n => n.trim());
-    const beerCount = beerParticipants.length;
+    const rawBeerParticipants = session.beerParticipants || [];
+    const beerCount = rawBeerParticipants.length;
     const beerPerPerson = beerCount > 0 ? (totalBeerExpense / beerCount) : 0;
 
     // 5. Tính tổng số tiền từng người phải đóng
     // Chuẩn hóa tên để so sánh chống lệch bảng mã unicode (NFC vs NFD)
     const normalizeName = str => (str || '').trim().toLowerCase().normalize('NFC');
     const paidMembers = (session.paidMembers || []).map(normalizeName);
-    const beerParticipants = (session.beerParticipants || []).map(normalizeName);
+    const beerMembers = rawBeerParticipants.map(normalizeName);
 
     const playerRows = playersList.map(p => {
       const pNorm = normalizeName(p.name);
-      const isBeer = beerParticipants.includes(pNorm);
+      const isBeer = beerMembers.includes(pNorm);
       const isPaid = paidMembers.includes(pNorm);
       const pickCost = p.lossPenalty + pickPerPerson;
       const beerCost = isBeer ? beerPerPerson : 0;

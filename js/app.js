@@ -1427,7 +1427,11 @@ window.App = {
   }
 };
 
-// Khởi chạy khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
+// Khởi chạy khi DOM sẵn sàng (hỗ trợ cả trường hợp đã nạp xong từ cache)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    App.init();
+  });
+} else {
   App.init();
-});
+}
