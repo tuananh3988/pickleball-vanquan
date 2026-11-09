@@ -623,9 +623,10 @@ window.App = {
       const isT1Win = m.score1 > m.score2;
       const t1Names = (m.team1 || []).join(' & ');
       const t2Names = (m.team2 || []).join(' & ');
+      const winnerName = isT1Win ? t1Names : t2Names;
 
       const videoButton = m.videoUrl ? `
-        <a href="${m.videoUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-xs transition group/btn ml-auto cursor-pointer" title="Xem video trận đấu trên YouTube (Mở tab mới)">
+        <a href="${m.videoUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-2xs transition group/btn shrink-0 cursor-pointer" title="Xem video trận đấu trên YouTube (Mở tab mới)">
           <svg class="w-3.5 h-3.5 fill-current text-white shrink-0" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z"/>
           </svg>
@@ -636,22 +637,20 @@ window.App = {
             <line x1="10" y1="14" x2="21" y2="3"></line>
           </svg>
         </a>
-      ` : '';
+      ` : (m.note ? `<span class="text-slate-400 italic text-[11px] shrink-0">${m.note}</span>` : '');
 
       return `
         <div class="bg-slate-50 border border-slate-200/90 rounded-xl p-3 hover:border-slate-300 transition space-y-2">
-          <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
-            <div class="flex items-center space-x-2">
-              <span>Trận #${m.id}</span>
-              ${m.videoUrl ? `
-                <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200/80">
-                  <span>▶ Video</span>
-                </span>
-              ` : ''}
+          <!-- Top Row: Trận # + Đội thắng bên trái; Nút Xem video bên phải -->
+          <div class="flex items-center justify-between gap-2 text-[11px] font-bold">
+            <div class="flex items-center space-x-1.5 min-w-0">
+              <span class="text-slate-400 shrink-0">Trận #${m.id}</span>
+              <span class="text-slate-300 shrink-0">•</span>
+              <span class="text-xs ${isT1Win ? 'text-emerald-700' : 'text-slate-600'} font-bold truncate">
+                🏆 ${winnerName} thắng
+              </span>
             </div>
-            <span class="text-xs ${isT1Win ? 'text-emerald-700' : 'text-slate-600'}">
-              ${isT1Win ? `🏆 ${t1Names} thắng` : `🏆 ${t2Names} thắng`}
-            </span>
+            ${videoButton}
           </div>
 
           <!-- Team 1 Row -->
@@ -671,13 +670,6 @@ window.App = {
             </div>
             <span class="text-sm sm:text-base font-extrabold ${!isT1Win ? 'text-emerald-800' : 'text-slate-500'}">${m.score2}</span>
           </div>
-
-          ${(m.videoUrl || m.note) ? `
-            <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
-              <span class="text-slate-400 italic text-[11px]">${m.note || ''}</span>
-              ${videoButton}
-            </div>
-          ` : ''}
         </div>
       `;
     }).join('');
