@@ -624,10 +624,31 @@ window.App = {
       const t1Names = (m.team1 || []).join(' & ');
       const t2Names = (m.team2 || []).join(' & ');
 
+      const videoButton = m.videoUrl ? `
+        <a href="${m.videoUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-xs transition group/btn ml-auto cursor-pointer" title="Xem video trận đấu trên YouTube (Mở tab mới)">
+          <svg class="w-3.5 h-3.5 fill-current text-white shrink-0" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <span>Xem video</span>
+          <svg class="w-3 h-3 stroke-current fill-none opacity-80 group-hover/btn:opacity-100 transition shrink-0" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      ` : '';
+
       return `
         <div class="bg-slate-50 border border-slate-200/90 rounded-xl p-3 hover:border-slate-300 transition space-y-2">
           <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
-            <span>Trận #${m.id}</span>
+            <div class="flex items-center space-x-2">
+              <span>Trận #${m.id}</span>
+              ${m.videoUrl ? `
+                <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200/80">
+                  <span>▶ Video</span>
+                </span>
+              ` : ''}
+            </div>
             <span class="text-xs ${isT1Win ? 'text-emerald-700' : 'text-slate-600'}">
               ${isT1Win ? `🏆 ${t1Names} thắng` : `🏆 ${t2Names} thắng`}
             </span>
@@ -650,6 +671,13 @@ window.App = {
             </div>
             <span class="text-sm sm:text-base font-extrabold ${!isT1Win ? 'text-emerald-800' : 'text-slate-500'}">${m.score2}</span>
           </div>
+
+          ${(m.videoUrl || m.note) ? `
+            <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
+              <span class="text-slate-400 italic text-[11px]">${m.note || ''}</span>
+              ${videoButton}
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
@@ -1049,9 +1077,11 @@ window.App = {
     const playerNames = [];
 
     let playerHeaderRowIdx = -1;
+    let matchHeaderRowIdx = -1;
     let colNameIdx = -1;
     let colBeerIdx = -1;
     let colPaidIdx = -1;
+    let colYoutubeIdx = -1;
 
     for (let r = 0; r < lines.length; r++) {
       const row = lines[r];
@@ -1063,6 +1093,23 @@ window.App = {
         if (cell === 'nuoc' && row[c + 1]) water = this.parseMoney(row[c + 1]);
         if (cell === 'bong' && row[c + 1]) balls = this.parseMoney(row[c + 1]);
         if (cell === 'bia' && row[c + 1]) beer = this.parseMoney(row[c + 1]);
+      }
+
+      // Tìm dòng tiêu đề bảng trận đấu: STT, Team 1, Team 2, Kết Quả, Note, Link youtube...
+      if (matchHeaderRowIdx === -1) {
+        for (let c = 0; c < row.length; c++) {
+          const cellH = (row[c] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+          if (cellH === 'stt' || cellH.includes('team 1') || cellH.includes('doi 1')) {
+            matchHeaderRowIdx = r;
+            for (let k = 0; k < row.length; k++) {
+              const kH = (row[k] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+              if (kH.includes('youtube') || kH.includes('video') || (kH.includes('link') && !kH.includes('sheet'))) {
+                colYoutubeIdx = k;
+              }
+            }
+            break;
+          }
+        }
       }
 
       // Tìm dòng tiêu đề bảng người chơi: Tên, Số trận... Đã thanh toán
@@ -1090,13 +1137,55 @@ window.App = {
         const team2 = row[2].split('&').map(n => n.trim()).filter(Boolean);
         const scoreParts = row[3].split('-').map(s => parseInt(s.trim(), 10));
         if (scoreParts.length === 2 && !isNaN(scoreParts[0]) && !isNaN(scoreParts[1])) {
+          // Lấy link video YouTube
+          let videoUrl = '';
+          if (colYoutubeIdx !== -1 && row[colYoutubeIdx]) {
+            videoUrl = (row[colYoutubeIdx] || '').trim();
+          }
+
+          // Quét thêm các cột từ cột 4 trở đi nếu chưa thấy ở colYoutubeIdx
+          if (!videoUrl) {
+            for (let k = 4; k < row.length; k++) {
+              const val = (row[k] || '').trim();
+              if (val.startsWith('http://') || val.startsWith('https://') || val.includes('youtube.com') || val.includes('youtu.be')) {
+                videoUrl = val;
+                break;
+              }
+            }
+          }
+
+          // Xử lý nếu link là công thức =HYPERLINK("https://...", "...")
+          if (videoUrl.startsWith('=')) {
+            const match = videoUrl.match(/"(https?:\/\/[^"]+)"/i);
+            if (match) videoUrl = match[1];
+          }
+
+          // Tự động thêm https:// nếu thiếu giao thức
+          if (videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+            if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+              videoUrl = 'https://' + videoUrl;
+            }
+          }
+
+          const hasValidVideo = Boolean(videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')));
+
+          // Note trận đấu (lấy từ cột 4 nếu không phải link video)
+          let note = '';
+          if (row[4]) {
+            const rawNote = row[4].trim();
+            if (!rawNote.startsWith('http') && !rawNote.includes('youtu.be') && !rawNote.includes('youtube.com') && colYoutubeIdx !== 4) {
+              note = rawNote;
+            }
+          }
+
           matches.push({
             id: stt,
             team1,
             team2,
             score1: scoreParts[0],
             score2: scoreParts[1],
-            note: row[4] || ''
+            note,
+            videoUrl: hasValidVideo ? videoUrl : ''
           });
         }
       }
