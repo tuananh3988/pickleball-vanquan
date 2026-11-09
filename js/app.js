@@ -8,6 +8,7 @@ window.App = {
   currentSessionId: null,
   cachedLeaderboardData: null,
   searchQuery: '',
+  leaderboardSort: { key: 'default', direction: 'desc' },
 
   init() {
     if (!window.PICKLEBALL_DATA || !window.Calculator) {
@@ -172,8 +173,11 @@ window.App = {
     const countEl = document.getElementById('stats-matches-count');
     if (countEl) countEl.textContent = `${stats.totalMatches} trận đấu (${stats.sessionCount} buổi)`;
 
-    // Render Top 3 Podium
+    // Render Top 3 Podium (3 vị trí đầu ở trên LUÔN giữ nguyên theo BXH gốc, không đổi theo sort)
     this.renderPodium(stats.players);
+
+    // Cập nhật giao diện mũi tên sắp xếp trên tiêu đề bảng
+    this.updateLeaderboardSortHeaders();
 
     // Render bảng danh sách đầy đủ
     this.renderLeaderboardTable();
@@ -265,15 +269,117 @@ window.App = {
   },
 
   /**
+   * Sắp xếp Bảng Xếp Hạng khi bấm vào tiêu đề cột
+   * @param {string} key - 'rank' | 'name' | 'matches' | 'wins' | 'winRate' | 'pointDiff' | 'streak'
+   */
+  sortLeaderboard(key) {
+    if (this.leaderboardSort.key === key) {
+      this.leaderboardSort.direction = this.leaderboardSort.direction === 'desc' ? 'asc' : 'desc';
+    } else {
+      this.leaderboardSort.key = key;
+      // Hạng và Tên mặc định tăng dần (asc), các chỉ số thành tích mặc định giảm dần (desc)
+      this.leaderboardSort.direction = (key === 'rank' || key === 'name') ? 'asc' : 'desc';
+    }
+    this.updateLeaderboardSortHeaders();
+    this.renderLeaderboardTable();
+  },
+
+  /**
+   * Khôi phục sắp xếp về mặc định của BXH
+   */
+  resetLeaderboardSort() {
+    this.leaderboardSort = { key: 'default', direction: 'desc' };
+    this.updateLeaderboardSortHeaders();
+    this.renderLeaderboardTable();
+  },
+
+  /**
+   * Cập nhật biểu tượng mũi tên trên tiêu đề các cột
+   */
+  updateLeaderboardSortHeaders() {
+    const { key, direction } = this.leaderboardSort;
+    const icons = document.querySelectorAll('.sort-icon');
+    icons.forEach(el => {
+      const col = el.getAttribute('data-sort-key');
+      if (col === key) {
+        el.textContent = direction === 'desc' ? '▼' : '▲';
+        el.className = 'sort-icon text-[11px] font-black text-emerald-800 bg-emerald-100 px-1 py-0.5 rounded shadow-2xs';
+      } else {
+        el.textContent = '↕';
+        el.className = 'sort-icon text-[10px] text-slate-300 font-normal';
+      }
+    });
+
+    const resetBtn = document.getElementById('leaderboard-sort-reset-btn');
+    if (resetBtn) {
+      if (key !== 'default') {
+        resetBtn.classList.remove('hidden');
+      } else {
+        resetBtn.classList.add('hidden');
+      }
+    }
+  },
+
+  /**
    * Render Leaderboard Table
    */
   renderLeaderboardTable() {
     const tbody = document.getElementById('leaderboard-tbody');
     if (!tbody || !this.cachedLeaderboardData) return;
 
-    let players = this.cachedLeaderboardData.players || [];
+    let players = [...(this.cachedLeaderboardData.players || [])];
+
+    // Áp dụng tìm kiếm
     if (this.searchQuery) {
       players = players.filter(p => p.name.toLowerCase().includes(this.searchQuery));
+    }
+
+    // Áp dụng sắp xếp (3 vị trí đầu ở Top Podium KHÔNG bị ảnh hưởng)
+    const { key, direction } = this.leaderboardSort;
+    const modifier = direction === 'asc' ? 1 : -1;
+
+    if (key !== 'default') {
+      players.sort((a, b) => {
+        let diff = 0;
+        switch (key) {
+          case 'rank':
+            diff = a.rank - b.rank;
+            break;
+          case 'name':
+            diff = a.name.localeCompare(b.name, 'vi');
+            break;
+          case 'matches':
+            diff = a.matches - b.matches;
+            if (diff === 0) diff = a.wins - b.wins;
+            if (diff === 0) diff = a.pointDiff - b.pointDiff;
+            break;
+          case 'wins':
+            // "Thắng thua khi bấm vào sort thì vẫn là sort theo trận thắng"
+            diff = a.wins - b.wins;
+            if (diff === 0) diff = a.pointDiff - b.pointDiff;
+            if (diff === 0) diff = a.matches - b.matches;
+            break;
+          case 'winRate':
+            diff = a.winRate - b.winRate;
+            if (diff === 0) diff = a.wins - b.wins;
+            if (diff === 0) diff = a.matches - b.matches;
+            break;
+          case 'pointDiff':
+            diff = a.pointDiff - b.pointDiff;
+            if (diff === 0) diff = a.wins - b.wins;
+            if (diff === 0) diff = a.matches - b.matches;
+            break;
+          case 'streak':
+            const scoreA = (a.streak && a.streak.type === 'W') ? a.streak.count : -(a.streak?.count || 0);
+            const scoreB = (b.streak && b.streak.type === 'W') ? b.streak.count : -(b.streak?.count || 0);
+            diff = scoreA - scoreB;
+            if (diff === 0) diff = a.wins - b.wins;
+            break;
+          default:
+            diff = a.rank - b.rank;
+        }
+        return diff * modifier;
+      });
     }
 
     if (players.length === 0) {

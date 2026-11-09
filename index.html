@@ -288,11 +288,15 @@
 
         <!-- Filter Context Bar & Search -->
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2 flex-wrap gap-y-1">
             <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
             <span id="current-filter-label" class="font-semibold text-slate-700">Đang xem: Toàn thời gian (All-time)</span>
             <span class="text-slate-300">•</span>
             <span id="stats-matches-count">17 trận đấu</span>
+            <button id="leaderboard-sort-reset-btn" onclick="App.resetLeaderboardSort()" class="hidden ml-2 inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition cursor-pointer" title="Khôi phục thứ tự mặc định">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+              <span>Về mặc định</span>
+            </button>
           </div>
 
           <!-- Search Player Input -->
@@ -314,15 +318,54 @@
           <table class="w-full text-left text-sm text-slate-600">
             <thead class="bg-slate-100/80 text-xs uppercase font-bold text-slate-500 tracking-wider border-b border-slate-200">
               <tr>
-                <th scope="col" class="py-3.5 px-4 text-center w-16">Hạng</th>
-                <th scope="col" class="py-3.5 px-4">Vận Động Viên</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Số Trận</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Thắng - Thua</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Tỉ Lệ Thắng</th>
-                <th scope="col" class="py-3.5 px-4 text-center hidden sm:table-cell">Điểm (Ghi - Mất)</th>
-                <th scope="col" class="py-3.5 px-4 text-center hidden md:table-cell">Hiệu Số</th>
-                <th scope="col" class="py-3.5 px-4 text-center hidden lg:table-cell">Phong Độ Gần Đây</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Chuỗi</th>
+                <th scope="col" onclick="App.sortLeaderboard('rank')" class="py-3.5 px-4 text-center w-16 cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Hạng">
+                  <div class="inline-flex items-center justify-center space-x-1">
+                    <span>Hạng</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="rank">↕</span>
+                  </div>
+                </th>
+                <th scope="col" onclick="App.sortLeaderboard('name')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Tên VĐV">
+                  <div class="inline-flex items-center space-x-1">
+                    <span>Vận Động Viên</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="name">↕</span>
+                  </div>
+                </th>
+                <th scope="col" onclick="App.sortLeaderboard('matches')" class="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Số trận">
+                  <div class="inline-flex items-center justify-center space-x-1">
+                    <span>Số Trận</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="matches">↕</span>
+                  </div>
+                </th>
+                <th scope="col" onclick="App.sortLeaderboard('wins')" class="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Trận thắng">
+                  <div class="inline-flex items-center justify-center space-x-1">
+                    <span>Thắng - Thua</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="wins">↕</span>
+                  </div>
+                </th>
+                <th scope="col" onclick="App.sortLeaderboard('winRate')" class="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Tỉ lệ thắng">
+                  <div class="inline-flex items-center justify-center space-x-1">
+                    <span>Tỉ Lệ Thắng</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="winRate">↕</span>
+                  </div>
+                </th>
+                <th scope="col" class="py-3.5 px-4 text-center hidden sm:table-cell">
+                  <span>Điểm (Ghi - Mất)</span>
+                </th>
+                <th scope="col" onclick="App.sortLeaderboard('pointDiff')" class="py-3.5 px-4 text-center hidden md:table-cell cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Hiệu số">
+                  <div class="inline-flex items-center justify-center space-x-1">
+                    <span>Hiệu Số</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="pointDiff">↕</span>
+                  </div>
+                </th>
+                <th scope="col" class="py-3.5 px-4 text-center hidden lg:table-cell">
+                  <span>Phong Độ Gần Đây</span>
+                </th>
+                <th scope="col" onclick="App.sortLeaderboard('streak')" class="py-3.5 px-4 text-center cursor-pointer hover:bg-slate-200/80 transition select-none" title="Bấm để sắp xếp theo Chuỗi thắng">
+                  <div class="inline-flex items-center justify-center space-x-1">
+                    <span>Chuỗi</span>
+                    <span class="sort-icon text-[10px]" data-sort-key="streak">↕</span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody id="leaderboard-tbody" class="divide-y divide-slate-100 font-medium">
@@ -620,8 +663,8 @@
   </footer>
 
   <!-- SCRIPTS -->
-  <script src="js/data.js?v=20261109_1745"></script>
-  <script src="js/calculator.js?v=20261109_1745"></script>
-  <script src="js/app.js?v=20261109_1745"></script>
+  <script src="js/data.js?v=20261109_1915"></script>
+  <script src="js/calculator.js?v=20261109_1915"></script>
+  <script src="js/app.js?v=20261109_1915"></script>
 </body>
 </html>
