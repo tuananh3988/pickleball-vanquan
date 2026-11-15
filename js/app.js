@@ -1325,10 +1325,13 @@ window.App = {
     }
 
     if (!session) {
+      const hasWeek3Players = playerNames.some(n => ['Quân', 'Công'].includes(n));
       const hasWeek2Players = playerNames.some(n => ['Tín', 'Vững', 'Đức', 'Hưng'].includes(n));
-      const hasWeek1Players = playerNames.some(n => ['Đạt', 'Luân', 'Khiêm', 'HAnh'].includes(n));
+      const hasWeek1Players = playerNames.some(n => ['Luân', 'Tùng 89'].includes(n));
 
-      if (hasWeek2Players) {
+      if (hasWeek3Players) {
+        session = sessions.find(s => s.id === 'session-2026-11-15');
+      } else if (hasWeek2Players) {
         session = sessions.find(s => s.id === 'session-2026-11-08');
       } else if (hasWeek1Players) {
         session = sessions.find(s => s.id === 'session-2026-11-01');

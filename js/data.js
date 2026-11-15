@@ -87,6 +87,35 @@ window.PICKLEBALL_DATA = {
         { id: 13, team1: ["Tùng 86", "Vững"], team2: ["Hưng", "Đức"], score1: 11, score2: 6, note: "" },
         { id: 14, team1: ["Tuấn Anh", "Hưng"], team2: ["Đức", "Vững"], score1: 4, score2: 11, note: "" }
       ]
+    },
+    {
+      id: "session-2026-11-15",
+      name: "Buổi thi đấu ngày 15/11/2026",
+      date: "2026-11-15",
+      location: "Sân Pickleball Văn Quán",
+      sheetGid: "",
+      expenses: {
+        court: 400000,
+        water: 250000,
+        balls: 0,
+        beer: 0
+      },
+      beerParticipants: [],
+      paidMembers: [],
+      matches: [
+        { id: 1, team1: ["Tùng", "Tuấn Anh"], team2: ["Cường", "Đạt"], score1: 11, score2: 4, note: "" },
+        { id: 2, team1: ["Cường", "Tuấn Anh"], team2: ["Quân", "Bình"], score1: 11, score2: 10, note: "" },
+        { id: 3, team1: ["Đạt", "Bình"], team2: ["Tùng", "Công"], score1: 11, score2: 8, note: "" },
+        { id: 4, team1: ["Quân", "Tuấn Anh"], team2: ["Khiêm", "Hoài Anh"], score1: 11, score2: 4, note: "" },
+        { id: 5, team1: ["Cường", "Hoài Anh"], team2: ["Đạt", "Tùng"], score1: 11, score2: 5, note: "" },
+        { id: 6, team1: ["Quân", "Công"], team2: ["Bình", "Khiêm"], score1: 9, score2: 11, note: "" },
+        { id: 7, team1: ["Tuấn Anh", "Hoài Anh"], team2: ["Cường", "Tùng"], score1: 11, score2: 10, note: "" },
+        { id: 8, team1: ["Bình", "Công"], team2: ["Đạt", "Khiêm"], score1: 7, score2: 11, note: "" },
+        { id: 9, team1: ["Cường", "Khiêm"], team2: ["Quân", "Tùng"], score1: 10, score2: 11, note: "" },
+        { id: 10, team1: ["Tuấn Anh", "Bình"], team2: ["Hoài Anh", "Đạt"], score1: 11, score2: 7, note: "" },
+        { id: 11, team1: ["Quân", "Cường"], team2: ["Tùng", "Khiêm"], score1: 11, score2: 7, note: "" },
+        { id: 12, team1: ["Tuấn Anh", "Công"], team2: ["Hoài Anh", "Bình"], score1: 11, score2: 7, note: "" }
+      ]
     }
   ]
 };
