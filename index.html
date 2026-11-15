@@ -396,13 +396,33 @@
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-600">
-            <thead class="bg-slate-100/80 text-xs uppercase font-bold text-slate-500 tracking-wider border-b border-slate-200">
+            <thead class="bg-slate-100/80 text-xs uppercase font-bold text-slate-500 tracking-wider border-b border-slate-200 select-none">
               <tr>
                 <th scope="col" class="py-3.5 px-4 text-center w-16">Hạng</th>
-                <th scope="col" class="py-3.5 px-4">Cặp Đôi (Bộ đôi)</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Số Trận Đã Đấu</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Thắng - Thua</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Tỉ Lệ Thắng (%)</th>
+                <th scope="col" class="py-3.5 px-4 cursor-pointer hover:text-slate-800 transition" onclick="App.setPairSort('name')">
+                  <div class="flex items-center space-x-1">
+                    <span>Cặp Đôi (Bộ đôi)</span>
+                    <span id="pair-sort-icon-name" class="text-[10px] text-slate-400">↕</span>
+                  </div>
+                </th>
+                <th scope="col" class="py-3.5 px-4 text-center cursor-pointer hover:text-slate-800 transition" onclick="App.setPairSort('matches')">
+                  <div class="flex items-center justify-center space-x-1">
+                    <span>Số Trận Đã Đấu</span>
+                    <span id="pair-sort-icon-matches" class="text-[10px] text-slate-400">↕</span>
+                  </div>
+                </th>
+                <th scope="col" class="py-3.5 px-4 text-center cursor-pointer hover:text-slate-800 transition" onclick="App.setPairSort('wins')">
+                  <div class="flex items-center justify-center space-x-1">
+                    <span>Thắng - Thua</span>
+                    <span id="pair-sort-icon-wins" class="text-[10px] text-slate-400">↕</span>
+                  </div>
+                </th>
+                <th scope="col" class="py-3.5 px-4 text-center cursor-pointer hover:text-slate-800 transition" onclick="App.setPairSort('winRate')">
+                  <div class="flex items-center justify-center space-x-1">
+                    <span>Tỉ Lệ Thắng (%)</span>
+                    <span id="pair-sort-icon-winRate" class="text-[10px] text-emerald-600 font-bold">↓</span>
+                  </div>
+                </th>
                 <th scope="col" class="py-3.5 px-4 text-center">Đánh Giá</th>
               </tr>
             </thead>
@@ -663,8 +683,8 @@
   </footer>
 
   <!-- SCRIPTS -->
-  <script src="js/data.js?v=20261115_2210"></script>
-  <script src="js/calculator.js?v=20261115_2210"></script>
-  <script src="js/app.js?v=20261115_2210"></script>
+  <script src="js/data.js?v=20261115_2225"></script>
+  <script src="js/calculator.js?v=20261115_2225"></script>
+  <script src="js/app.js?v=20261115_2225"></script>
 </body>
 </html>

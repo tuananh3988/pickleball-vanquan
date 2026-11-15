@@ -2,7 +2,17 @@
  * Module Tính toán Thống kê & Phân bổ Chi phí - Pickleball Văn Quán
  */
 
+/**
+ * Chuẩn hóa tên VĐV (HAnh luôn là Hoài Anh)
+ */
+function mapCanonicalName(n) {
+  const t = (n || '').trim();
+  if (t === 'HAnh') return 'Hoài Anh';
+  return t;
+}
+
 window.Calculator = {
+  mapCanonicalName,
   /**
    * Tính toán chi tiết tài chính và thống kê cho một buổi chơi cụ thể
    * @param {Object} session - Dữ liệu buổi chơi
@@ -194,12 +204,6 @@ window.Calculator = {
     const playerMap = {};
     const pairMap = {};
 
-    const mapCanonicalName = n => {
-      const t = (n || '').trim();
-      if (t === 'HAnh') return 'Hoài Anh';
-      return t;
-    };
-
     sortedSessions.forEach(session => {
       (session.matches || []).forEach(match => {
         const isT1Win = match.score1 > match.score2;
@@ -332,15 +336,32 @@ window.Calculator = {
       p.rank = idx + 1;
     });
 
-    // Thống kê cặp đôi
+    // Thống kê cặp đôi: sắp xếp theo số trận thắng - thua, tỉ lệ này đôi nào cao ở trên
     const pairs = Object.values(pairMap).map(pair => {
       const winRate = pair.matches > 0 ? (pair.wins / pair.matches * 100) : 0;
+      const pointDiff = pair.wins - pair.losses;
       return {
         ...pair,
         winRate,
+        pointDiff,
         winRateFormatted: winRate.toFixed(1)
       };
-    }).sort((a, b) => b.winRate - a.winRate || b.matches - a.matches);
+    }).sort((a, b) => {
+      // 1. Tỉ lệ thắng (%) đôi nào cao hơn ở trên
+      if (b.winRate !== a.winRate) {
+        return b.winRate - a.winRate;
+      }
+      // 2. Nếu bằng tỉ lệ thắng: Số trận thắng nhiều hơn ở trên
+      if (b.wins !== a.wins) {
+        return b.wins - a.wins;
+      }
+      // 3. Hiệu số trận thắng - thua (wins - losses) cao hơn ở trên
+      if (b.pointDiff !== a.pointDiff) {
+        return b.pointDiff - a.pointDiff;
+      }
+      // 4. Số trận đã đấu nhiều hơn ở trên
+      return b.matches - a.matches;
+    });
 
     return {
       players,

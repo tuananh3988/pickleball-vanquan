@@ -9,6 +9,7 @@ window.App = {
   cachedLeaderboardData: null,
   searchQuery: '',
   leaderboardSort: { key: 'default', direction: 'desc' },
+  pairSort: { key: 'default', direction: 'desc' },
 
   init() {
     if (!window.PICKLEBALL_DATA || !window.Calculator) {
@@ -797,6 +798,19 @@ window.App = {
   },
 
   /**
+   * Đổi cột sắp xếp cho Tab Cặp Đôi Ăn Ý
+   */
+  setPairSort(key) {
+    if (this.pairSort.key === key) {
+      this.pairSort.direction = this.pairSort.direction === 'desc' ? 'asc' : 'desc';
+    } else {
+      this.pairSort.key = key;
+      this.pairSort.direction = 'desc';
+    }
+    this.renderPairs();
+  },
+
+  /**
    * Render Tab Cặp Đôi Ăn Ý
    */
   renderPairs() {
@@ -805,11 +819,51 @@ window.App = {
 
     const sessions = window.PICKLEBALL_DATA.sessions || [];
     const stats = Calculator.calculateLeaderboard(sessions, { type: 'all' });
-    const pairs = stats.pairs || [];
+    let pairs = [...(stats.pairs || [])];
 
     if (pairs.length === 0) {
       tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Chưa có dữ liệu cặp đôi</td></tr>`;
       return;
+    }
+
+    const { key, direction } = this.pairSort;
+    const factor = direction === 'desc' ? 1 : -1;
+
+    // Cập nhật mũi tên chỉ hướng sort trên tiêu đề cột
+    ['name', 'matches', 'wins', 'winRate'].forEach(col => {
+      const el = document.getElementById(`pair-sort-icon-${col}`);
+      if (el) {
+        if (key === col || (key === 'default' && col === 'winRate')) {
+          el.textContent = direction === 'desc' ? '↓' : '↑';
+          el.className = 'text-[10px] text-emerald-600 font-bold';
+        } else {
+          el.textContent = '↕';
+          el.className = 'text-[10px] text-slate-400';
+        }
+      }
+    });
+
+    if (key === 'winRate' || key === 'default') {
+      pairs.sort((a, b) => {
+        if (b.winRate !== a.winRate) return (b.winRate - a.winRate) * factor;
+        if (b.wins !== a.wins) return (b.wins - a.wins) * factor;
+        const diffB = b.wins - b.losses;
+        const diffA = a.wins - a.losses;
+        if (diffB !== diffA) return (diffB - diffA) * factor;
+        return (b.matches - a.matches) * factor;
+      });
+    } else if (key === 'wins') {
+      pairs.sort((a, b) => {
+        if (b.wins !== a.wins) return (b.wins - a.wins) * factor;
+        const diffB = b.wins - b.losses;
+        const diffA = a.wins - a.losses;
+        if (diffB !== diffA) return (diffB - diffA) * factor;
+        return (b.winRate - a.winRate) * factor;
+      });
+    } else if (key === 'matches') {
+      pairs.sort((a, b) => (b.matches - a.matches) * factor || (b.wins - a.wins) * factor);
+    } else if (key === 'name') {
+      pairs.sort((a, b) => a.name.localeCompare(b.name, 'vi') * factor);
     }
 
     tbody.innerHTML = pairs.map((pair, idx) => {
