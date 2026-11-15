@@ -93,15 +93,20 @@ window.PICKLEBALL_DATA = {
       name: "Buổi thi đấu ngày 15/11/2026",
       date: "2026-11-15",
       location: "Sân Pickleball Văn Quán",
-      sheetGid: "",
+      sheetGid: "1729338637",
       expenses: {
-        court: 400000,
-        water: 250000,
+        court: 300000,
+        water: 220000,
         balls: 0,
-        beer: 0
+        beer: 785000
       },
-      beerParticipants: [],
+      beerParticipants: [
+        "Tuấn Anh", "Quân", "Cường", "Hoài Anh", "Tùng"
+      ],
       paidMembers: [],
+      extraBets: {
+        "Tuấn Anh": 10000
+      },
       matches: [
         { id: 1, team1: ["Tùng", "Tuấn Anh"], team2: ["Cường", "Đạt"], score1: 11, score2: 4, note: "" },
         { id: 2, team1: ["Cường", "Tuấn Anh"], team2: ["Quân", "Bình"], score1: 11, score2: 10, note: "" },
