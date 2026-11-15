@@ -103,7 +103,6 @@ window.Calculator = {
 
     // 5. Tính tổng số tiền từng người phải đóng
     // Chuẩn hóa tên để so sánh chống lệch bảng mã unicode (NFC vs NFD)
-    const normalizeName = str => (str || '').trim().toLowerCase().normalize('NFC');
     const paidMembers = (session.paidMembers || []).map(normalizeName);
     const beerMembers = rawBeerParticipants.map(normalizeName);
 
