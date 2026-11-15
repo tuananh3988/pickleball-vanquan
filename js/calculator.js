@@ -194,11 +194,17 @@ window.Calculator = {
     const playerMap = {};
     const pairMap = {};
 
+    const mapCanonicalName = n => {
+      const t = (n || '').trim();
+      if (t === 'HAnh') return 'Hoài Anh';
+      return t;
+    };
+
     sortedSessions.forEach(session => {
       (session.matches || []).forEach(match => {
         const isT1Win = match.score1 > match.score2;
-        const t1 = (match.team1 || []).map(n => n.trim());
-        const t2 = (match.team2 || []).map(n => n.trim());
+        const t1 = (match.team1 || []).map(mapCanonicalName);
+        const t2 = (match.team2 || []).map(mapCanonicalName);
 
         // Cập nhật từng người chơi
         [...t1, ...t2].forEach(name => {
@@ -392,7 +398,7 @@ window.Calculator = {
     filteredSessions.forEach(session => {
       const exp = session.expenses || {};
       const sessionBeerExpense = exp.beer || 0;
-      const beerList = (session.beerParticipants || []).map(n => n.trim()).filter(Boolean);
+      const beerList = (session.beerParticipants || []).map(mapCanonicalName).filter(Boolean);
       const beerCount = beerList.length;
       const costPerPerson = beerCount > 0 ? (sessionBeerExpense / beerCount) : 0;
 
@@ -404,7 +410,7 @@ window.Calculator = {
       // Thu thập tất cả thành viên trong buổi (từ matches)
       (session.matches || []).forEach(m => {
         [...(m.team1 || []), ...(m.team2 || [])].forEach(rawName => {
-          const name = rawName.trim();
+          const name = mapCanonicalName(rawName);
           if (!playerBeerMap[name]) {
             playerBeerMap[name] = {
               name,

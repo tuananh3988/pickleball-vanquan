@@ -25,28 +25,28 @@ window.PICKLEBALL_DATA = {
       },
       // Danh sách người tham gia tăng 2 (uống bia)
       beerParticipants: [
-        "Đạt", "Tuấn Anh", "Khiêm", "Tuấn", "HAnh", "Cường", "Bình"
+        "Đạt", "Tuấn Anh", "Khiêm", "Tuấn", "Hoài Anh", "Cường", "Bình"
       ],
       // Danh sách thành viên đã thanh toán tiền buổi này (đồng bộ từ Google Sheets)
       paidMembers: [
-        "Tùng", "Luân", "Đạt", "Tuấn Anh", "Khiêm", "Tuấn", "Tùng 89", "HAnh", "Tùng 86", "Cường", "Bình"
+        "Tùng", "Luân", "Đạt", "Tuấn Anh", "Khiêm", "Tuấn", "Tùng 89", "Hoài Anh", "Tùng 86", "Cường", "Bình"
       ],
       // Danh sách 17 trận đôi của buổi 01/11/2026
       matches: [
         { id: 1, team1: ["Tuấn Anh", "Tùng"], team2: ["Cường", "Đạt"], score1: 11, score2: 3, note: "" },
-        { id: 2, team1: ["Khiêm", "Tuấn"], team2: ["HAnh", "Bình"], score1: 11, score2: 8, note: "" },
+        { id: 2, team1: ["Khiêm", "Tuấn"], team2: ["Hoài Anh", "Bình"], score1: 11, score2: 8, note: "" },
         { id: 3, team1: ["Tuấn Anh", "Cường"], team2: ["Tùng 86", "Luân"], score1: 11, score2: 10, note: "" },
-        { id: 4, team1: ["Tùng", "Tùng 89"], team2: ["HAnh", "Đạt"], score1: 11, score2: 6, note: "" },
+        { id: 4, team1: ["Tùng", "Tùng 89"], team2: ["Hoài Anh", "Đạt"], score1: 11, score2: 6, note: "" },
         { id: 5, team1: ["Tuấn Anh", "Đạt"], team2: ["Tuấn", "Cường"], score1: 11, score2: 10, note: "" },
-        { id: 6, team1: ["Tùng", "HAnh"], team2: ["Khiêm", "Tùng 89"], score1: 11, score2: 6, note: "" },
+        { id: 6, team1: ["Tùng", "Hoài Anh"], team2: ["Khiêm", "Tùng 89"], score1: 11, score2: 6, note: "" },
         { id: 7, team1: ["Cường", "Luân"], team2: ["Tùng 86", "Bình"], score1: 11, score2: 1, note: "" },
         { id: 8, team1: ["Tuấn Anh", "Tuấn"], team2: ["Khiêm", "Tùng"], score1: 5, score2: 11, note: "" },
-        { id: 9, team1: ["Bình", "Luân"], team2: ["HAnh", "Tùng 86"], score1: 11, score2: 7, note: "" },
-        { id: 10, team1: ["Tuấn Anh", "Bình"], team2: ["Khiêm", "HAnh"], score1: 2, score2: 11, note: "" },
-        { id: 11, team1: ["HAnh", "Tuấn"], team2: ["Tùng 86", "Tùng"], score1: 8, score2: 11, note: "" },
+        { id: 9, team1: ["Bình", "Luân"], team2: ["Hoài Anh", "Tùng 86"], score1: 11, score2: 7, note: "" },
+        { id: 10, team1: ["Tuấn Anh", "Bình"], team2: ["Khiêm", "Hoài Anh"], score1: 2, score2: 11, note: "" },
+        { id: 11, team1: ["Hoài Anh", "Tuấn"], team2: ["Tùng 86", "Tùng"], score1: 8, score2: 11, note: "" },
         { id: 12, team1: ["Tùng 86", "Tuấn"], team2: ["Bình", "Khiêm"], score1: 11, score2: 6, note: "" },
         { id: 13, team1: ["Bình", "Cường"], team2: ["Khiêm", "Luân"], score1: 8, score2: 11, note: "" },
-        { id: 14, team1: ["Tuấn Anh", "Tùng 89"], team2: ["HAnh", "Đạt"], score1: 10, score2: 11, note: "" },
+        { id: 14, team1: ["Tuấn Anh", "Tùng 89"], team2: ["Hoài Anh", "Đạt"], score1: 10, score2: 11, note: "" },
         { id: 15, team1: ["Tuấn Anh", "Luân"], team2: ["Cường", "Tùng"], score1: 11, score2: 5, note: "" },
         { id: 16, team1: ["Bình", "Luân"], team2: ["Khiêm", "Tùng 86"], score1: 11, score2: 2, note: "" },
         { id: 17, team1: ["Tuấn", "Đạt"], team2: ["Cường", "Tùng 89"], score1: 11, score2: 9, note: "" }
@@ -101,7 +101,7 @@ window.PICKLEBALL_DATA = {
         beer: 785000
       },
       beerParticipants: [
-        "Tuấn Anh", "Quân", "Cường", "Hoài Anh", "Tùng"
+        "Tuấn Anh", "Bình", "Khiêm", "Hoài Anh", "Tùng"
       ],
       paidMembers: [],
       extraBets: {

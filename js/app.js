@@ -501,15 +501,15 @@ window.App = {
     let initials = '';
 
     // Khởi tạo chữ viết tắt tương ứng theo ảnh mẫu của CLB
-    if (trimmed === 'Tùng nhỏ') initials = 'Tn';
+    if (trimmed === 'Tùng nhỏ' || trimmed === 'Tùng 86') initials = 'Tn';
     else if (trimmed === 'Luân') initials = 'L';
     else if (trimmed === 'Đạt') initials = 'Đ';
     else if (trimmed === 'Tuấn Anh') initials = 'TA';
     else if (trimmed === 'Khiêm') initials = 'K';
     else if (trimmed === 'Tuấn') initials = 'T';
-    else if (trimmed === 'Tùng trọc') initials = 'Tt';
-    else if (trimmed === 'HAnh') initials = 'HA';
-    else if (trimmed === 'Tùng lớn') initials = 'TL';
+    else if (trimmed === 'Tùng trọc' || trimmed === 'Tùng 89') initials = 'Tt';
+    else if (trimmed === 'HAnh' || trimmed === 'Hoài Anh') initials = 'HA';
+    else if (trimmed === 'Tùng lớn' || trimmed === 'Tùng') initials = 'TL';
     else if (trimmed === 'Cường') initials = 'C';
     else if (trimmed === 'Bình') initials = 'B';
     else {
@@ -521,14 +521,18 @@ window.App = {
     // Bảng màu pastel nhẹ nhàng đồng bộ với ảnh
     const colorMap = {
       'Tùng nhỏ': 'bg-[#e2e8dd] text-[#3d5236]',
+      'Tùng 86': 'bg-[#e2e8dd] text-[#3d5236]',
       'Luân': 'bg-[#fae5d9] text-[#9c4d21]',
       'Đạt': 'bg-[#e3e8ea] text-[#37525a]',
       'Tuấn Anh': 'bg-[#e4ebf5] text-[#294c74]',
       'Khiêm': 'bg-[#e1e9df] text-[#395636]',
       'Tuấn': 'bg-[#fae6dd] text-[#974e2d]',
       'Tùng trọc': 'bg-[#e4e7e2] text-[#42523f]',
+      'Tùng 89': 'bg-[#e4e7e2] text-[#42523f]',
       'HAnh': 'bg-[#e6e2f5] text-[#48378a]',
+      'Hoài Anh': 'bg-[#e6e2f5] text-[#48378a]',
       'Tùng lớn': 'bg-[#fceadc] text-[#924b1f]',
+      'Tùng': 'bg-[#fceadc] text-[#924b1f]',
       'Cường': 'bg-[#e2ecf2] text-[#27536d]',
       'Bình': 'bg-[#e7f0e4] text-[#2f6128]'
     };
@@ -1234,8 +1238,14 @@ window.App = {
       // Đọc các trận đấu (STT 1 -> 50)
       const stt = parseInt(row[0], 10);
       if (!isNaN(stt) && stt >= 1 && stt <= 50 && row[1] && row[2] && row[3]) {
-        const team1 = row[1].split('&').map(n => n.trim()).filter(Boolean);
-        const team2 = row[2].split('&').map(n => n.trim()).filter(Boolean);
+        const mapPlayerName = (n) => {
+          const t = n.trim();
+          const c = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          if (c === 'hanh' || c === 'hoai anh') return 'Hoài Anh';
+          return t;
+        };
+        const team1 = row[1].split('&').map(mapPlayerName).filter(Boolean);
+        const team2 = row[2].split('&').map(mapPlayerName).filter(Boolean);
         const scoreParts = row[3].split('-').map(s => parseInt(s.trim(), 10));
         if (scoreParts.length === 2 && !isNaN(scoreParts[0]) && !isNaN(scoreParts[1])) {
           // Lấy link video YouTube
@@ -1296,9 +1306,20 @@ window.App = {
     if (playerHeaderRowIdx !== -1 && colNameIdx !== -1) {
       for (let r = playerHeaderRowIdx + 1; r < lines.length; r++) {
         const row = lines[r];
-        const name = (row[colNameIdx] || '').trim();
-        const cleanName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        if (!name || cleanName.includes('tong') || cleanName.includes('con') || cleanName.includes('so nguoi')) break;
+        const rawName = (row[colNameIdx] || '').trim();
+        const cleanName = rawName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        if (!rawName) continue;
+        // Dừng khi gặp các dòng tổng kết ở cuối bảng (Tổng tiền thua, Còn, Số người...)
+        if (cleanName.startsWith('tong ') || cleanName === 'tong' || cleanName.startsWith('con ') || cleanName === 'con' || cleanName.includes('so nguoi')) {
+          break;
+        }
+
+        // Chuẩn hóa tên VĐV: HAnh luôn là Hoài Anh
+        let name = rawName;
+        if (cleanName === 'hanh' || cleanName === 'hoai anh') {
+          name = 'Hoài Anh';
+        }
+
         playerNames.push(name);
 
         // Đi bia
