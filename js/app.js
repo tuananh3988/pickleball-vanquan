@@ -651,8 +651,8 @@ window.App = {
             <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.matches}</td>
             <td class="py-3 px-2 text-center font-bold text-[#1f6838] whitespace-nowrap">${p.wins}</td>
             <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.losses}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.lossPenalty)}</td>
-            <td class="py-3 px-3 text-right text-slate-400 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.extraBet || 0)}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.matchLossPenalty !== undefined ? p.matchLossPenalty : (p.losses * 10000))}</td>
+            <td class="py-3 px-3 text-right ${p.extraBet > 0 ? 'text-amber-700 font-bold' : 'text-slate-400'} font-normal text-xs sm:text-sm whitespace-nowrap">${p.extraBet > 0 ? Calculator.formatCurrency(p.extraBet) : '0đ'}</td>
             <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.pickCost)}</td>
             <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—'}</td>
             <td class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-[#143d25] text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.totalFinal)}</td>
@@ -681,8 +681,8 @@ window.App = {
           <td class="py-3 px-2 text-center whitespace-nowrap">${summary.totalMatches * 4}</td>
           <td class="py-3 px-2 text-center text-[#1f6838] whitespace-nowrap">${summary.totalMatches * 2}</td>
           <td class="py-3 px-2 text-center whitespace-nowrap">${summary.totalMatches * 2}</td>
-          <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalLossPenalty)}</td>
-          <td class="py-3 px-3 text-right text-slate-400 whitespace-nowrap">0đ</td>
+          <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalMatchLoss !== undefined ? summary.totalMatchLoss : summary.totalLossPenalty)}</td>
+          <td class="py-3 px-3 text-right ${summary.totalExtraBet > 0 ? 'text-amber-700 font-bold' : 'text-slate-400'} whitespace-nowrap">${Calculator.formatCurrency(summary.totalExtraBet || 0)}</td>
           <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalPickExpense)}</td>
           <td class="py-3 px-3 text-right whitespace-nowrap">${Calculator.formatCurrency(summary.totalBeerExpense)}</td>
           <td class="py-3 px-3 text-right bg-[#f1f3ec] text-[#143d25] font-black whitespace-nowrap">${Calculator.formatCurrency(summary.totalAllExpenses)}</td>
@@ -1173,6 +1173,7 @@ window.App = {
     const paidMembers = [];
     const beerParticipants = [];
     const playerNames = [];
+    const extraBets = {};
 
     let playerHeaderRowIdx = -1;
     let matchHeaderRowIdx = -1;
@@ -1180,6 +1181,7 @@ window.App = {
     let colBeerIdx = -1;
     let colPaidIdx = -1;
     let colYoutubeIdx = -1;
+    let colExtraBetIdx = -1;
 
     for (let r = 0; r < lines.length; r++) {
       const row = lines[r];
@@ -1222,6 +1224,7 @@ window.App = {
               const hClean = (row[k] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
               if (hClean.includes('bia')) colBeerIdx = k;
               if (hClean.includes('thanh toan') || hClean.includes('tt') || hClean.includes('paid')) colPaidIdx = k;
+              if (hClean.includes('do them') || hClean.includes('so them') || (hClean.includes('them') && !hClean.includes('thanh toan'))) colExtraBetIdx = k;
             }
             break;
           }
@@ -1313,6 +1316,14 @@ window.App = {
             paidMembers.push(name);
           }
         }
+
+        // Độ thêm
+        if (colExtraBetIdx !== -1 && row[colExtraBetIdx]) {
+          const betVal = this.parseMoney(row[colExtraBetIdx]);
+          if (!isNaN(betVal) && betVal > 0) {
+            extraBets[name] = betVal;
+          }
+        }
       }
     }
 
@@ -1352,6 +1363,7 @@ window.App = {
     };
     session.beerParticipants = beerParticipants;
     session.paidMembers = paidMembers;
+    session.extraBets = extraBets;
 
     return true;
   },

@@ -62,10 +62,25 @@ window.Calculator = {
     const playersList = Object.values(playerStats);
     const totalPlayers = playersList.length;
 
-    // 2. Tính tiền phạt thua
+    // 2. Tính tiền phạt thua và độ thêm
     let totalLossPenalty = 0;
+    let totalMatchLoss = 0;
+    let totalExtraBet = 0;
+    const normalizeName = str => (str || '').trim().toLowerCase().normalize('NFC');
+    const extraBets = session.extraBets || {};
+
     playersList.forEach(p => {
-      p.lossPenalty = p.losses * penaltyRate;
+      const pNorm = normalizeName(p.name);
+      let extra = p.extraBet || 0;
+      if (extraBets[p.name] !== undefined) extra = extraBets[p.name];
+      else if (extraBets[pNorm] !== undefined) extra = extraBets[pNorm];
+
+      p.extraBet = extra;
+      p.matchLossPenalty = p.losses * penaltyRate;
+      p.lossPenalty = p.matchLossPenalty + extra;
+
+      totalMatchLoss += p.matchLossPenalty;
+      totalExtraBet += extra;
       totalLossPenalty += p.lossPenalty;
     });
 
@@ -127,6 +142,8 @@ window.Calculator = {
         balls,
         totalPickExpense,
         totalLossPenalty,
+        totalMatchLoss,
+        totalExtraBet,
         remainingPickExpense,
         pickPerPerson,
         totalBeerExpense,
