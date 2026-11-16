@@ -832,6 +832,150 @@ window.Calculator = {
   },
 
   /**
+   * Tính ma trận đồng đội toàn giải (theo bộ lọc thời gian BXH)
+   * Không tính cột tổng điểm/TB
+   */
+  calculateCumulativeTeammateMatrix(sessions, filter = { type: 'all' }) {
+    if (!sessions || sessions.length === 0) return { players: [], matrix: {}, playerRankMap: {} };
+    const stats = this.calculateLeaderboard(sessions, filter);
+    const players = (stats.players || []).map(p => p.name);
+    const playerRankMap = {};
+    (stats.players || []).forEach(p => {
+      playerRankMap[p.name] = p.rank;
+    });
+
+    const matrix = {};
+    players.forEach(p1 => {
+      matrix[p1] = {};
+      players.forEach(p2 => {
+        matrix[p1][p2] = { wins: 0, losses: 0, matchIds: [] };
+      });
+    });
+
+    // Lọc các buổi
+    const filteredSessions = sessions.filter(session => {
+      if (filter.type === 'all') return true;
+      if (!session.date) return true;
+      const date = new Date(session.date);
+      const sYear = date.getFullYear();
+      const sMonth = date.getMonth() + 1;
+      const sQuarter = Math.ceil(sMonth / 3);
+      const sWeek = this.getISOWeek(date);
+      if (filter.type === 'year') return sYear === parseInt(filter.year);
+      if (filter.type === 'quarter') return sYear === parseInt(filter.year) && sQuarter === parseInt(filter.quarter);
+      if (filter.type === 'month') return sYear === parseInt(filter.year) && sMonth === parseInt(filter.month);
+      if (filter.type === 'week') return sYear === parseInt(filter.year) && sWeek === parseInt(filter.week);
+      return true;
+    });
+
+    const mapName = (n) => (this.mapCanonicalName ? this.mapCanonicalName(n) : (n || '').trim());
+
+    filteredSessions.forEach(session => {
+      (session.matches || []).forEach(m => {
+        const isT1Win = Number(m.score1) > Number(m.score2);
+        const t1 = (m.team1 || []).map(mapName);
+        const t2 = (m.team2 || []).map(mapName);
+
+        if (t1.length === 2 && matrix[t1[0]] && matrix[t1[0]][t1[1]]) {
+          const pA = t1[0];
+          const pB = t1[1];
+          if (isT1Win) {
+            matrix[pA][pB].wins += 1;
+            matrix[pB][pA].wins += 1;
+          } else {
+            matrix[pA][pB].losses += 1;
+            matrix[pB][pA].losses += 1;
+          }
+          matrix[pA][pB].matchIds.push(m.id);
+          matrix[pB][pA].matchIds.push(m.id);
+        }
+
+        if (t2.length === 2 && matrix[t2[0]] && matrix[t2[0]][t2[1]]) {
+          const pA = t2[0];
+          const pB = t2[1];
+          if (!isT1Win) {
+            matrix[pA][pB].wins += 1;
+            matrix[pB][pA].wins += 1;
+          } else {
+            matrix[pA][pB].losses += 1;
+            matrix[pB][pA].losses += 1;
+          }
+          matrix[pA][pB].matchIds.push(m.id);
+          matrix[pB][pA].matchIds.push(m.id);
+        }
+      });
+    });
+
+    return { players, playerRankMap, matrix };
+  },
+
+  /**
+   * Tính ma trận đối đầu toàn giải (theo bộ lọc thời gian BXH)
+   * Không tính cột tổng điểm/TB
+   */
+  calculateCumulativeOpponentMatrix(sessions, filter = { type: 'all' }) {
+    if (!sessions || sessions.length === 0) return { players: [], matrix: {}, playerRankMap: {} };
+    const stats = this.calculateLeaderboard(sessions, filter);
+    const players = (stats.players || []).map(p => p.name);
+    const playerRankMap = {};
+    (stats.players || []).forEach(p => {
+      playerRankMap[p.name] = p.rank;
+    });
+
+    const matrix = {};
+    players.forEach(p1 => {
+      matrix[p1] = {};
+      players.forEach(p2 => {
+        matrix[p1][p2] = { wins: 0, losses: 0, matchIds: [] };
+      });
+    });
+
+    // Lọc các buổi
+    const filteredSessions = sessions.filter(session => {
+      if (filter.type === 'all') return true;
+      if (!session.date) return true;
+      const date = new Date(session.date);
+      const sYear = date.getFullYear();
+      const sMonth = date.getMonth() + 1;
+      const sQuarter = Math.ceil(sMonth / 3);
+      const sWeek = this.getISOWeek(date);
+      if (filter.type === 'year') return sYear === parseInt(filter.year);
+      if (filter.type === 'quarter') return sYear === parseInt(filter.year) && sQuarter === parseInt(filter.quarter);
+      if (filter.type === 'month') return sYear === parseInt(filter.year) && sMonth === parseInt(filter.month);
+      if (filter.type === 'week') return sYear === parseInt(filter.year) && sWeek === parseInt(filter.week);
+      return true;
+    });
+
+    const mapName = (n) => (this.mapCanonicalName ? this.mapCanonicalName(n) : (n || '').trim());
+
+    filteredSessions.forEach(session => {
+      (session.matches || []).forEach(m => {
+        const isT1Win = Number(m.score1) > Number(m.score2);
+        const t1 = (m.team1 || []).map(mapName);
+        const t2 = (m.team2 || []).map(mapName);
+
+        t1.forEach(p1 => {
+          t2.forEach(p2 => {
+            if (p1 && p2 && p1 !== p2 && matrix[p1] && matrix[p1][p2] && matrix[p2] && matrix[p2][p1]) {
+              if (isT1Win) {
+                matrix[p1][p2].wins += 1;
+                matrix[p2][p1].losses += 1;
+              } else {
+                matrix[p1][p2].losses += 1;
+                matrix[p2][p1].wins += 1;
+              }
+              matrix[p1][p2].matchIds.push(m.id);
+              matrix[p2][p1].matchIds.push(m.id);
+            }
+          });
+        });
+      });
+    });
+
+    return { players, playerRankMap, matrix };
+  },
+
+  /**
    * Định dạng tiền tệ dạng nghìn (ví dụ: 30k, 197k, 1.305k)
    * Bỏ 3 số 0 thay bằng chữ k
    */

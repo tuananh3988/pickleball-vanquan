@@ -183,6 +183,10 @@ window.App = {
     // Render bảng danh sách đầy đủ
     this.renderLeaderboardTable();
 
+    // Render 2 bảng ma trận Đồng đội & Đối đầu trong BXH (không có cột tổng điểm)
+    this.renderLeaderboardTeammateMatrix();
+    this.renderLeaderboardOpponentMatrix();
+
     if (window.lucide) {
       lucide.createIcons();
     }
@@ -466,6 +470,238 @@ window.App = {
         </tr>
       `;
     }).join('');
+  },
+
+  /**
+   * Render Ma trận Đồng Đội trong Bảng Xếp Hạng (toàn giải / theo filter thời gian, không có cột tổng điểm)
+   */
+  renderLeaderboardTeammateMatrix() {
+    const container = document.getElementById('leaderboard-teammate-matrix-container');
+    if (!container) return;
+
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
+    const { players, playerRankMap, matrix } = Calculator.calculateCumulativeTeammateMatrix(sessions, this.currentFilter);
+
+    if (!players || players.length === 0) {
+      container.innerHTML = `<div class="py-8 text-center text-slate-400 text-sm">Chưa có dữ liệu thi đấu trong khoảng thời gian này</div>`;
+      return;
+    }
+
+    const headerHtml = `
+      <thead>
+        <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
+          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đồng đội</div>
+          </th>
+          ${players.map(p => {
+            const av = this.getPlayerAvatar(p);
+            const rank = playerRankMap ? playerRankMap[p] : null;
+            const rankText = rank ? ` (${rank})` : '';
+            return `
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
+                <div class="flex flex-col items-center justify-center space-y-1">
+                  <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
+                  <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
+                </div>
+              </th>
+            `;
+          }).join('')}
+        </tr>
+      </thead>
+    `;
+
+    const rowsHtml = players.map(p1 => {
+      const av1 = this.getPlayerAvatar(p1);
+      const rank1 = playerRankMap ? playerRankMap[p1] : null;
+      const rank1Text = rank1 ? ` (${rank1})` : '';
+      const cellsHtml = players.map(p2 => {
+        if (p1 === p2) {
+          return `
+            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
+              <span class="text-slate-300 font-bold text-xs">—</span>
+            </td>
+          `;
+        }
+
+        const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
+        const totalPlayed = cell.wins + cell.losses;
+
+        if (totalPlayed === 0) {
+          return `
+            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
+              —
+            </td>
+          `;
+        }
+
+        if (cell.wins > 0 && cell.losses === 0) {
+          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
+          return `
+            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins} trận">
+                ${text}
+              </span>
+            </td>
+          `;
+        }
+
+        if (cell.losses > 0 && cell.wins === 0) {
+          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
+          return `
+            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thua ${cell.losses} trận">
+                ${text}
+              </span>
+            </td>
+          `;
+        }
+
+        return `
+          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
+              ${cell.wins}W - ${cell.losses}L
+            </span>
+          </td>
+        `;
+      }).join('');
+
+      return `
+        <tr class="hover:bg-slate-50/70 transition group">
+          <td class="py-2.5 px-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 whitespace-nowrap">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-full ${av1.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs flex-shrink-0">${av1.initials}</span>
+              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}<span class="text-slate-400 font-semibold text-xs">${rank1Text}</span></span>
+            </div>
+          </td>
+          ${cellsHtml}
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <table class="w-full text-center border-collapse min-w-[650px] text-xs sm:text-sm">
+        ${headerHtml}
+        <tbody class="divide-y divide-slate-100">
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+  },
+
+  /**
+   * Render Ma trận Đối Đầu trong Bảng Xếp Hạng (toàn giải / theo filter thời gian, không có cột tổng điểm)
+   */
+  renderLeaderboardOpponentMatrix() {
+    const container = document.getElementById('leaderboard-opponent-matrix-container');
+    if (!container) return;
+
+    const sessions = window.PICKLEBALL_DATA.sessions || [];
+    const { players, playerRankMap, matrix } = Calculator.calculateCumulativeOpponentMatrix(sessions, this.currentFilter);
+
+    if (!players || players.length === 0) {
+      container.innerHTML = `<div class="py-8 text-center text-slate-400 text-sm">Chưa có dữ liệu thi đấu trong khoảng thời gian này</div>`;
+      return;
+    }
+
+    const headerHtml = `
+      <thead>
+        <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
+          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đối thủ</div>
+          </th>
+          ${players.map(p => {
+            const av = this.getPlayerAvatar(p);
+            const rank = playerRankMap ? playerRankMap[p] : null;
+            const rankText = rank ? ` (${rank})` : '';
+            return `
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
+                <div class="flex flex-col items-center justify-center space-y-1">
+                  <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
+                  <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
+                </div>
+              </th>
+            `;
+          }).join('')}
+        </tr>
+      </thead>
+    `;
+
+    const rowsHtml = players.map(p1 => {
+      const av1 = this.getPlayerAvatar(p1);
+      const rank1 = playerRankMap ? playerRankMap[p1] : null;
+      const rank1Text = rank1 ? ` (${rank1})` : '';
+      const cellsHtml = players.map(p2 => {
+        if (p1 === p2) {
+          return `
+            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
+              <span class="text-slate-300 font-bold text-xs">—</span>
+            </td>
+          `;
+        }
+
+        const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
+        const totalPlayed = cell.wins + cell.losses;
+
+        if (totalPlayed === 0) {
+          return `
+            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
+              —
+            </td>
+          `;
+        }
+
+        if (cell.wins > 0 && cell.losses === 0) {
+          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
+          return `
+            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thắng ${cell.wins} trận">
+                ${text}
+              </span>
+            </td>
+          `;
+        }
+
+        if (cell.losses > 0 && cell.wins === 0) {
+          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
+          return `
+            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thua ${cell.losses} trận">
+                ${text}
+              </span>
+            </td>
+          `;
+        }
+
+        return `
+          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
+              ${cell.wins}W - ${cell.losses}L
+            </span>
+          </td>
+        `;
+      }).join('');
+
+      return `
+        <tr class="hover:bg-slate-50/70 transition group">
+          <td class="py-2.5 px-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 whitespace-nowrap">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-full ${av1.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs flex-shrink-0">${av1.initials}</span>
+              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}<span class="text-slate-400 font-semibold text-xs">${rank1Text}</span></span>
+            </div>
+          </td>
+          ${cellsHtml}
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <table class="w-full text-center border-collapse min-w-[650px] text-xs sm:text-sm">
+        ${headerHtml}
+        <tbody class="divide-y divide-slate-100">
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
   },
 
   /**
@@ -862,11 +1098,8 @@ window.App = {
               </th>
             `;
           }).join('')}
-          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-emerald-50/90 border-l-2 border-emerald-200 min-w-[95px] sm:min-w-[110px]">
-            <div class="flex flex-col items-center justify-center space-y-0.5">
-              <span class="text-xs font-black text-emerald-900">Điểm TB Partner</span>
-              <span class="text-[10px] text-emerald-700 font-medium">Partner thấp = điểm cao</span>
-            </div>
+          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-emerald-50/90 border-l-2 border-emerald-200 min-w-[85px] sm:min-w-[100px]">
+            <span class="text-xs font-black text-emerald-900">Điểm TB Partner</span>
           </th>
         </tr>
       </thead>
