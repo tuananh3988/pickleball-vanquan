@@ -773,10 +773,12 @@ window.Calculator = {
       });
     }
 
-    // 2. Xây dựng ma trận [p1][p2] = { wins, losses, matchIds }
+    // 2. Xây dựng ma trận [p1][p2] = { wins, losses, matchIds } và tính điểm đối thủ
     const matrix = {};
+    const opponentScores = {};
     players.forEach(p1 => {
       matrix[p1] = {};
+      opponentScores[p1] = { totalPoints: 0, count: 0, avgPoints: "0.0" };
       players.forEach(p2 => {
         matrix[p1][p2] = { wins: 0, losses: 0, matchIds: [] };
       });
@@ -800,12 +802,33 @@ window.Calculator = {
             }
             matrix[p1][p2].matchIds.push(m.id);
             matrix[p2][p1].matchIds.push(m.id);
+
+            // Điểm đối thủ: p1 chạm trán p2
+            // Điểm thấp tức là đối thủ khỏe (vì rank 1, 2, 3 là top cao)
+            const rank1 = playerRankMap[p1] || 0;
+            const rank2 = playerRankMap[p2] || 0;
+            if (opponentScores[p1]) {
+              opponentScores[p1].totalPoints += rank2;
+              opponentScores[p1].count += 1;
+            }
+            if (opponentScores[p2]) {
+              opponentScores[p2].totalPoints += rank1;
+              opponentScores[p2].count += 1;
+            }
           }
         });
       });
     });
 
-    return { players, playerRankMap, matrix };
+    // Tính điểm trung bình thứ hạng đối thủ mỗi lần chạm trán
+    players.forEach(p => {
+      const s = opponentScores[p];
+      if (s && s.count > 0) {
+        s.avgPoints = (s.totalPoints / s.count).toFixed(1);
+      }
+    });
+
+    return { players, playerRankMap, matrix, opponentScores };
   },
 
   /**
