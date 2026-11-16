@@ -111,13 +111,17 @@ window.Calculator = {
 
     // Số tiền Pick còn thiếu sau khi lấy tiền phạt bù vào
     const remainingPickExpense = totalPickExpense - totalLossPenalty;
-    const pickPerPerson = totalPlayers > 0 ? (remainingPickExpense / totalPlayers) : 0;
+    const rawPickPerPerson = totalPlayers > 0 ? (remainingPickExpense / totalPlayers) : 0;
+    // Làm tròn tiền chia: trên 500đ thì làm tròn lên, dưới 500đ thì làm tròn xuống (hàng nghìn)
+    const pickPerPerson = Math.round(rawPickPerPerson / 1000) * 1000;
 
     // 4. Tính tiền Bia
     const totalBeerExpense = exp.beer || 0;
     const rawBeerParticipants = session.beerParticipants || [];
     const beerCount = rawBeerParticipants.length;
-    const beerPerPerson = beerCount > 0 ? (totalBeerExpense / beerCount) : 0;
+    const rawBeerPerPerson = beerCount > 0 ? (totalBeerExpense / beerCount) : 0;
+    // Làm tròn tiền chia: trên 500đ thì làm tròn lên, dưới 500đ thì làm tròn xuống (hàng nghìn)
+    const beerPerPerson = Math.round(rawBeerPerPerson / 1000) * 1000;
 
     // 5. Tính tổng số tiền từng người phải đóng
     // Chuẩn hóa tên để so sánh chống lệch bảng mã unicode (NFC vs NFD)
@@ -446,7 +450,8 @@ window.Calculator = {
       const sessionBeerExpense = exp.beer || 0;
       const beerList = (session.beerParticipants || []).map(mapCanonicalName).filter(Boolean);
       const beerCount = beerList.length;
-      const costPerPerson = beerCount > 0 ? (sessionBeerExpense / beerCount) : 0;
+      const rawCostPerPerson = beerCount > 0 ? (sessionBeerExpense / beerCount) : 0;
+      const costPerPerson = Math.round(rawCostPerPerson / 1000) * 1000;
 
       if (sessionBeerExpense > 0 || beerCount > 0) {
         sessionsWithBeer++;
@@ -750,14 +755,13 @@ window.Calculator = {
   },
 
   /**
-   * Định dạng tiền tệ VNĐ (ví dụ: 291.338đ hoặc dạng k)
+   * Định dạng tiền tệ dạng nghìn (ví dụ: 30k, 197k, 1.305k)
+   * Bỏ 3 số 0 thay bằng chữ k
    */
-  formatCurrency(amount, inThousands = false) {
-    if (amount === undefined || amount === null || isNaN(amount)) return "0đ";
-    if (inThousands) {
-      return (amount / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + "k";
-    }
-    return Math.round(amount).toLocaleString('vi-VN') + "đ";
+  formatCurrency(amount) {
+    if (amount === undefined || amount === null || isNaN(amount)) return "0k";
+    const rounded = Math.round(Number(amount) / 1000);
+    return rounded.toLocaleString('vi-VN') + "k";
   }
 };
 

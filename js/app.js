@@ -670,7 +670,7 @@ window.App = {
             <td class="py-3 px-2 text-center font-bold text-[#1f6838] whitespace-nowrap">${p.wins}</td>
             <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.losses}</td>
             <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.matchLossPenalty !== undefined ? p.matchLossPenalty : (p.losses * 10000))}</td>
-            <td class="py-3 px-3 text-right ${p.extraBet > 0 ? 'text-amber-700 font-bold' : 'text-slate-400'} font-normal text-xs sm:text-sm whitespace-nowrap">${p.extraBet > 0 ? Calculator.formatCurrency(p.extraBet) : '0đ'}</td>
+            <td class="py-3 px-3 text-right ${p.extraBet > 0 ? 'text-amber-700 font-bold' : 'text-slate-400'} font-normal text-xs sm:text-sm whitespace-nowrap">${p.extraBet > 0 ? Calculator.formatCurrency(p.extraBet) : '0k'}</td>
             <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.pickCost)}</td>
             <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—'}</td>
             <td class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-[#143d25] text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.totalFinal)}</td>
