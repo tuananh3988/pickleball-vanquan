@@ -646,9 +646,21 @@ window.App = {
     const tbody = document.getElementById('session-finances-tbody');
     if (tbody) {
       tbody.innerHTML = playerRows.map(p => {
+        let rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-slate-100 text-slate-600">#${p.rank}</span>`;
+        if (p.rank === 1) {
+          rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">🥇 1</span>`;
+        } else if (p.rank === 2) {
+          rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs">🥈 2</span>`;
+        } else if (p.rank === 3) {
+          rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-amber-50 text-amber-900 border border-amber-500/40 shadow-2xs">🥉 3</span>`;
+        }
+
         return `
           <tr class="hover:bg-slate-50/70 transition group">
-            <td class="py-3 px-3 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-100 min-w-[125px] sm:min-w-[140px] whitespace-nowrap">
+            <td class="py-3 px-2 text-center sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100 w-12 min-w-[48px] max-w-[48px] whitespace-nowrap">
+              ${rankBadge}
+            </td>
+            <td class="py-3 px-3 sticky left-12 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-100 min-w-[125px] sm:min-w-[140px] whitespace-nowrap">
               <div class="flex items-center space-x-1.5 whitespace-nowrap">
                 <span class="font-bold text-slate-900">${p.name}</span>
                 ${p.isBeer ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200/60 whitespace-nowrap flex-shrink-0">🍻 Đi bia</span>' : ''}
@@ -683,7 +695,7 @@ window.App = {
     if (tfoot) {
       tfoot.innerHTML = `
         <tr class="font-bold text-slate-800">
-          <td class="py-3 px-3 sticky left-0 bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-200 min-w-[125px] sm:min-w-[140px] text-slate-900 whitespace-nowrap">Tổng cộng</td>
+          <td colspan="2" class="py-3 px-3 sticky left-0 bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] border-r border-slate-200 min-w-[173px] sm:min-w-[188px] text-slate-900 whitespace-nowrap">Tổng cộng</td>
           <td class="py-3 px-2 text-center whitespace-nowrap">${summary.totalMatches * 4}</td>
           <td class="py-3 px-2 text-center text-[#1f6838] whitespace-nowrap">${summary.totalMatches * 2}</td>
           <td class="py-3 px-2 text-center whitespace-nowrap">${summary.totalMatches * 2}</td>

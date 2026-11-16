@@ -146,6 +146,23 @@ window.Calculator = {
     // Sắp xếp danh sách người chơi theo quy tắc: Thua ít đứng trước · bằng thua, thắng nhiều đứng trước
     playerRows.sort((a, b) => a.losses - b.losses || b.wins - a.wins || b.matches - a.matches);
 
+    // Gán xếp hạng theo quy tắc: Cùng trận thắng - thua thì cùng xếp hạng
+    let currentRank = 1;
+    playerRows.forEach((p, idx) => {
+      if (idx > 0) {
+        const prev = playerRows[idx - 1];
+        if (p.wins === prev.wins && p.losses === prev.losses) {
+          p.rank = currentRank;
+        } else {
+          currentRank = idx + 1;
+          p.rank = currentRank;
+        }
+      } else {
+        p.rank = 1;
+        currentRank = 1;
+      }
+    });
+
     // Tính tổng kiểm tra
     const totalCalculatedFinal = playerRows.reduce((sum, r) => sum + r.totalFinal, 0);
 
