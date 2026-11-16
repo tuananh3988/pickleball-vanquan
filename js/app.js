@@ -1295,10 +1295,9 @@ window.App = {
       const stt = parseInt(row[0], 10);
       if (!isNaN(stt) && stt >= 1 && stt <= 50 && row[1] && row[2] && row[3]) {
         const mapPlayerName = (n) => {
-          const t = n.trim();
-          const c = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-          if (c === 'hanh' || c === 'hoai anh') return 'Hoài Anh';
-          return t;
+          return (window.Calculator && window.Calculator.mapCanonicalName)
+            ? window.Calculator.mapCanonicalName(n)
+            : n.trim();
         };
         const team1 = row[1].split('&').map(mapPlayerName).filter(Boolean);
         const team2 = row[2].split('&').map(mapPlayerName).filter(Boolean);
@@ -1370,11 +1369,10 @@ window.App = {
           break;
         }
 
-        // Chuẩn hóa tên VĐV: HAnh luôn là Hoài Anh
-        let name = rawName;
-        if (cleanName === 'hanh' || cleanName === 'hoai anh') {
-          name = 'Hoài Anh';
-        }
+        // Chuẩn hóa tên VĐV qua hàm chuẩn hóa dùng chung
+        const name = (window.Calculator && window.Calculator.mapCanonicalName)
+          ? window.Calculator.mapCanonicalName(rawName)
+          : rawName;
 
         playerNames.push(name);
 
@@ -1411,23 +1409,11 @@ window.App = {
     if (targetSessionId) {
       session = sessions.find(s => s.id === targetSessionId);
     }
-
-    if (!session) {
-      const hasWeek3Players = playerNames.some(n => ['Quân', 'Công'].includes(n));
-      const hasWeek2Players = playerNames.some(n => ['Tín', 'Vững', 'Đức', 'Hưng'].includes(n));
-      const hasWeek1Players = playerNames.some(n => ['Luân', 'Tùng 89'].includes(n));
-
-      if (hasWeek3Players) {
-        session = sessions.find(s => s.id === 'session-2026-11-15');
-      } else if (hasWeek2Players) {
-        session = sessions.find(s => s.id === 'session-2026-11-08');
-      } else if (hasWeek1Players) {
-        session = sessions.find(s => s.id === 'session-2026-11-01');
-      }
+    if (!session && this.currentSessionId) {
+      session = sessions.find(s => s.id === this.currentSessionId);
     }
-
-    if (!session) {
-      session = sessions.find(s => s.id === this.currentSessionId) || sessions[0];
+    if (!session && sessions.length > 0) {
+      session = sessions[sessions.length - 1];
     }
     if (!session) return false;
 

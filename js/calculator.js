@@ -3,12 +3,19 @@
  */
 
 /**
- * Chuẩn hóa tên VĐV (HAnh luôn là Hoài Anh)
+ * Chuẩn hóa tên VĐV (HAnh luôn là Hoài Anh; xử lý Unicode NFC)
  */
 function mapCanonicalName(n) {
-  const t = (n || '').trim();
-  if (t === 'HAnh') return 'Hoài Anh';
-  return t;
+  if (!n) return '';
+  const trimmed = n.trim().normalize('NFC');
+  const lower = trimmed.toLowerCase();
+  
+  if (lower === 'hanh' || lower === 'hoài anh' || lower === 'hoai anh') return 'Hoài Anh';
+  if (lower === 'tùng lớn') return 'Tùng';
+  if (lower === 'tùng nhỏ') return 'Tùng 86';
+  if (lower === 'tùng trọc') return 'Tùng 89';
+
+  return trimmed;
 }
 
 window.Calculator = {
@@ -29,12 +36,11 @@ window.Calculator = {
     // 1. Phân tích kết quả các trận đấu
     session.matches.forEach(match => {
       const isTeam1Win = match.score1 > match.score2;
-      const t1 = match.team1 || [];
-      const t2 = match.team2 || [];
+      const t1 = (match.team1 || []).map(mapCanonicalName);
+      const t2 = (match.team2 || []).map(mapCanonicalName);
 
       // Khởi tạo player nếu chưa có
-      [...t1, ...t2].forEach(name => {
-        const cleanName = name.trim();
+      [...t1, ...t2].forEach(cleanName => {
         if (!playerStats[cleanName]) {
           playerStats[cleanName] = {
             name: cleanName,
@@ -50,7 +56,7 @@ window.Calculator = {
 
       // Ghi nhận Team 1
       t1.forEach(name => {
-        const p = playerStats[name.trim()];
+        const p = playerStats[name];
         p.matches += 1;
         p.pointsWon += match.score1;
         p.pointsLost += match.score2;
@@ -60,7 +66,7 @@ window.Calculator = {
 
       // Ghi nhận Team 2
       t2.forEach(name => {
-        const p = playerStats[name.trim()];
+        const p = playerStats[name];
         p.matches += 1;
         p.pointsWon += match.score2;
         p.pointsLost += match.score1;
@@ -76,14 +82,19 @@ window.Calculator = {
     let totalLossPenalty = 0;
     let totalMatchLoss = 0;
     let totalExtraBet = 0;
-    const normalizeName = str => (str || '').trim().toLowerCase().normalize('NFC');
-    const extraBets = session.extraBets || {};
+    const normalizeName = str => mapCanonicalName(str).toLowerCase();
 
     playersList.forEach(p => {
       const pNorm = normalizeName(p.name);
       let extra = p.extraBet || 0;
-      if (extraBets[p.name] !== undefined) extra = extraBets[p.name];
-      else if (extraBets[pNorm] !== undefined) extra = extraBets[pNorm];
+      if (session.extraBets) {
+        for (const [k, v] of Object.entries(session.extraBets)) {
+          if (normalizeName(k) === pNorm) {
+            extra = v;
+            break;
+          }
+        }
+      }
 
       p.extraBet = extra;
       p.matchLossPenalty = p.losses * penaltyRate;
