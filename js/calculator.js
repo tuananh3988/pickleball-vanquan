@@ -611,7 +611,7 @@ window.Calculator = {
    */
   calculateTeammateMatrix(session) {
     if (!session || !session.matches || session.matches.length === 0) {
-      return { players: [], matrix: {} };
+      return { players: [], matrix: {}, playerRankMap: {}, teammateScores: {} };
     }
 
     const matches = session.matches;
@@ -626,29 +626,41 @@ window.Calculator = {
       });
     });
 
-    // Lấy thứ tự sắp xếp theo danh sách bảng chia tiền (để đồng bộ thứ tự người chơi)
+    // Lấy thứ tự sắp xếp theo danh sách bảng chia tiền (để đồng bộ thứ tự người chơi và lấy rank)
     const fin = this.calculateSessionFinancials(session);
     let players = [];
+    const playerRankMap = {};
     if (fin && fin.playerRows && fin.playerRows.length > 0) {
       players = fin.playerRows.map(p => p.name);
+      fin.playerRows.forEach(p => {
+        playerRankMap[p.name] = p.rank || 0;
+      });
       playerSet.forEach(p => {
-        if (!players.includes(p)) players.push(p);
+        if (!players.includes(p)) {
+          players.push(p);
+          playerRankMap[p] = players.length;
+        }
       });
     } else {
       players = Array.from(playerSet);
+      players.forEach((p, idx) => {
+        playerRankMap[p] = idx + 1;
+      });
     }
 
-    // 2. Xây dựng ma trận [p1][p2] = { wins, losses, matchIds }
+    // 2. Xây dựng ma trận [p1][p2] = { wins, losses, matchIds } và điểm đồng đội
     const matrix = {};
+    const teammateScores = {};
     players.forEach(p1 => {
       matrix[p1] = {};
+      teammateScores[p1] = { totalPoints: 0, count: 0, avgPoints: "0.0" };
       players.forEach(p2 => {
         matrix[p1][p2] = { wins: 0, losses: 0, matchIds: [] };
       });
     });
 
     matches.forEach(m => {
-      const isT1Win = m.score1 > m.score2;
+      const isT1Win = Number(m.score1) > Number(m.score2);
       const t1 = (m.team1 || []).map(mapName);
       const t2 = (m.team2 || []).map(mapName);
 
@@ -665,6 +677,18 @@ window.Calculator = {
         }
         matrix[pA][pB].matchIds.push(m.id);
         matrix[pB][pA].matchIds.push(m.id);
+
+        // Cộng điểm đồng đội: Ai cặp với đồng đội thứ hạng thấp (số rank lớn) thì điểm càng cao
+        const rankA = playerRankMap[pA] || 0;
+        const rankB = playerRankMap[pB] || 0;
+        if (teammateScores[pA]) {
+          teammateScores[pA].totalPoints += rankB;
+          teammateScores[pA].count += 1;
+        }
+        if (teammateScores[pB]) {
+          teammateScores[pB].totalPoints += rankA;
+          teammateScores[pB].count += 1;
+        }
       }
 
       // Nếu team 2 có 2 người
@@ -680,10 +704,30 @@ window.Calculator = {
         }
         matrix[pA][pB].matchIds.push(m.id);
         matrix[pB][pA].matchIds.push(m.id);
+
+        // Cộng điểm đồng đội: Ai cặp với đồng đội thứ hạng thấp (số rank lớn) thì điểm càng cao
+        const rankA = playerRankMap[pA] || 0;
+        const rankB = playerRankMap[pB] || 0;
+        if (teammateScores[pA]) {
+          teammateScores[pA].totalPoints += rankB;
+          teammateScores[pA].count += 1;
+        }
+        if (teammateScores[pB]) {
+          teammateScores[pB].totalPoints += rankA;
+          teammateScores[pB].count += 1;
+        }
       }
     });
 
-    return { players, matrix };
+    // Tính điểm trung bình của đồng đội
+    players.forEach(p => {
+      const s = teammateScores[p];
+      if (s && s.count > 0) {
+        s.avgPoints = (s.totalPoints / s.count).toFixed(1);
+      }
+    });
+
+    return { players, playerRankMap, matrix, teammateScores };
   },
 
   /**
@@ -692,7 +736,7 @@ window.Calculator = {
    */
   calculateOpponentMatrix(session) {
     if (!session || !session.matches || session.matches.length === 0) {
-      return { players: [], matrix: {} };
+      return { players: [], playerRankMap: {}, matrix: {} };
     }
 
     const matches = session.matches;
@@ -707,16 +751,26 @@ window.Calculator = {
       });
     });
 
-    // Lấy thứ tự sắp xếp theo danh sách bảng chia tiền (để đồng bộ thứ tự người chơi)
+    // Lấy thứ tự sắp xếp theo danh sách bảng chia tiền (để đồng bộ thứ tự người chơi và rank)
     const fin = this.calculateSessionFinancials(session);
     let players = [];
+    const playerRankMap = {};
     if (fin && fin.playerRows && fin.playerRows.length > 0) {
       players = fin.playerRows.map(p => p.name);
+      fin.playerRows.forEach(p => {
+        playerRankMap[p.name] = p.rank || 0;
+      });
       playerSet.forEach(p => {
-        if (!players.includes(p)) players.push(p);
+        if (!players.includes(p)) {
+          players.push(p);
+          playerRankMap[p] = players.length;
+        }
       });
     } else {
       players = Array.from(playerSet);
+      players.forEach((p, idx) => {
+        playerRankMap[p] = idx + 1;
+      });
     }
 
     // 2. Xây dựng ma trận [p1][p2] = { wins, losses, matchIds }
@@ -751,7 +805,7 @@ window.Calculator = {
       });
     });
 
-    return { players, matrix };
+    return { players, playerRankMap, matrix };
   },
 
   /**

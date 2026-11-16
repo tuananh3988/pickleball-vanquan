@@ -832,7 +832,7 @@ window.App = {
       return;
     }
 
-    const { players, matrix } = Calculator.calculateTeammateMatrix(session);
+    const { players, playerRankMap, matrix, teammateScores } = Calculator.calculateTeammateMatrix(session);
     if (!players || players.length === 0) {
       container.innerHTML = `
         <div class="py-8 text-center text-slate-400 text-sm">
@@ -846,20 +846,28 @@ window.App = {
     const headerHtml = `
       <thead>
         <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
-          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[125px] sm:min-w-[140px] whitespace-nowrap">
+          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đồng đội</div>
           </th>
           ${players.map(p => {
             const av = this.getPlayerAvatar(p);
+            const rank = playerRankMap ? playerRankMap[p] : null;
+            const rankText = rank ? ` (${rank})` : '';
             return `
-              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[72px] sm:min-w-[85px] border-r border-slate-100 last:border-r-0">
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
                 <div class="flex flex-col items-center justify-center space-y-1">
                   <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
-                  <span class="text-xs font-bold text-slate-700">${p}</span>
+                  <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
                 </div>
               </th>
             `;
           }).join('')}
+          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-emerald-50/90 border-l-2 border-emerald-200 min-w-[95px] sm:min-w-[110px]">
+            <div class="flex flex-col items-center justify-center space-y-0.5">
+              <span class="text-xs font-black text-emerald-900">Tổng Điểm ĐĐ</span>
+              <span class="text-[10px] text-emerald-700 font-medium">ĐĐ thấp = điểm cao</span>
+            </div>
+          </th>
         </tr>
       </thead>
     `;
@@ -867,6 +875,8 @@ window.App = {
     // Từng hàng người chơi
     const rowsHtml = players.map(p1 => {
       const av1 = this.getPlayerAvatar(p1);
+      const rank1 = playerRankMap ? playerRankMap[p1] : null;
+      const rank1Text = rank1 ? ` (${rank1})` : '';
       const cellsHtml = players.map(p2 => {
         if (p1 === p2) {
           return `
@@ -921,21 +931,32 @@ window.App = {
         `;
       }).join('');
 
+      const score = (teammateScores && teammateScores[p1]) || { totalPoints: 0, count: 0, avgPoints: "0.0" };
+      const scoreCellHtml = `
+        <td class="py-2 px-2 text-center bg-emerald-50/40 border-l-2 border-emerald-100 whitespace-nowrap">
+          <div class="flex flex-col items-center justify-center">
+            <span class="font-black text-emerald-800 text-sm sm:text-base">${score.totalPoints}</span>
+            <span class="text-[10px] text-slate-400 font-medium">TB: ${score.avgPoints}</span>
+          </div>
+        </td>
+      `;
+
       return `
         <tr class="hover:bg-slate-50/70 transition group">
           <td class="py-2.5 px-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 whitespace-nowrap">
             <div class="flex items-center space-x-2">
               <span class="w-6 h-6 rounded-full ${av1.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs flex-shrink-0">${av1.initials}</span>
-              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}</span>
+              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}<span class="text-slate-400 font-semibold text-xs">${rank1Text}</span></span>
             </div>
           </td>
           ${cellsHtml}
+          ${scoreCellHtml}
         </tr>
       `;
     }).join('');
 
     container.innerHTML = `
-      <table class="w-full text-center border-collapse min-w-[650px] text-xs sm:text-sm">
+      <table class="w-full text-center border-collapse min-w-[720px] text-xs sm:text-sm">
         ${headerHtml}
         <tbody class="divide-y divide-slate-100">
           ${rowsHtml}
@@ -960,7 +981,7 @@ window.App = {
       return;
     }
 
-    const { players, matrix } = Calculator.calculateOpponentMatrix(session);
+    const { players, playerRankMap, matrix } = Calculator.calculateOpponentMatrix(session);
     if (!players || players.length === 0) {
       container.innerHTML = `
         <div class="py-8 text-center text-slate-400 text-sm">
@@ -974,16 +995,18 @@ window.App = {
     const headerHtml = `
       <thead>
         <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
-          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[125px] sm:min-w-[140px] whitespace-nowrap">
+          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đối thủ</div>
           </th>
           ${players.map(p => {
             const av = this.getPlayerAvatar(p);
+            const rank = playerRankMap ? playerRankMap[p] : null;
+            const rankText = rank ? ` (${rank})` : '';
             return `
-              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[72px] sm:min-w-[85px] border-r border-slate-100 last:border-r-0">
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
                 <div class="flex flex-col items-center justify-center space-y-1">
                   <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
-                  <span class="text-xs font-bold text-slate-700">${p}</span>
+                  <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
                 </div>
               </th>
             `;
@@ -995,6 +1018,8 @@ window.App = {
     // Từng hàng người chơi
     const rowsHtml = players.map(p1 => {
       const av1 = this.getPlayerAvatar(p1);
+      const rank1 = playerRankMap ? playerRankMap[p1] : null;
+      const rank1Text = rank1 ? ` (${rank1})` : '';
       const cellsHtml = players.map(p2 => {
         if (p1 === p2) {
           return `
@@ -1054,7 +1079,7 @@ window.App = {
           <td class="py-2.5 px-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 whitespace-nowrap">
             <div class="flex items-center space-x-2">
               <span class="w-6 h-6 rounded-full ${av1.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs flex-shrink-0">${av1.initials}</span>
-              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}</span>
+              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}<span class="text-slate-400 font-semibold text-xs">${rank1Text}</span></span>
             </div>
           </td>
           ${cellsHtml}
