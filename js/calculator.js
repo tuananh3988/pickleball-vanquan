@@ -584,6 +584,87 @@ window.Calculator = {
   },
 
   /**
+   * Tính toán ma trận thành tích khi đứng cặp với từng đồng đội trong buổi chơi
+   * @param {Object} session - Buổi chơi
+   */
+  calculateTeammateMatrix(session) {
+    if (!session || !session.matches || session.matches.length === 0) {
+      return { players: [], matrix: {} };
+    }
+
+    const matches = session.matches;
+    const playerSet = new Set();
+    const mapName = (n) => (this.mapCanonicalName ? this.mapCanonicalName(n) : (n || '').trim());
+
+    // 1. Lấy danh sách VĐV tham gia buổi này
+    matches.forEach(m => {
+      [...(m.team1 || []), ...(m.team2 || [])].forEach(raw => {
+        const name = mapName(raw);
+        if (name) playerSet.add(name);
+      });
+    });
+
+    // Lấy thứ tự sắp xếp theo danh sách bảng chia tiền (để đồng bộ thứ tự người chơi)
+    const fin = this.calculateSessionFinancials(session);
+    let players = [];
+    if (fin && fin.playerRows && fin.playerRows.length > 0) {
+      players = fin.playerRows.map(p => p.name);
+      playerSet.forEach(p => {
+        if (!players.includes(p)) players.push(p);
+      });
+    } else {
+      players = Array.from(playerSet);
+    }
+
+    // 2. Xây dựng ma trận [p1][p2] = { wins, losses, matchIds }
+    const matrix = {};
+    players.forEach(p1 => {
+      matrix[p1] = {};
+      players.forEach(p2 => {
+        matrix[p1][p2] = { wins: 0, losses: 0, matchIds: [] };
+      });
+    });
+
+    matches.forEach(m => {
+      const isT1Win = m.score1 > m.score2;
+      const t1 = (m.team1 || []).map(mapName);
+      const t2 = (m.team2 || []).map(mapName);
+
+      // Nếu team 1 có 2 người
+      if (t1.length === 2 && matrix[t1[0]] && matrix[t1[0]][t1[1]]) {
+        const pA = t1[0];
+        const pB = t1[1];
+        if (isT1Win) {
+          matrix[pA][pB].wins += 1;
+          matrix[pB][pA].wins += 1;
+        } else {
+          matrix[pA][pB].losses += 1;
+          matrix[pB][pA].losses += 1;
+        }
+        matrix[pA][pB].matchIds.push(m.id);
+        matrix[pB][pA].matchIds.push(m.id);
+      }
+
+      // Nếu team 2 có 2 người
+      if (t2.length === 2 && matrix[t2[0]] && matrix[t2[0]][t2[1]]) {
+        const pA = t2[0];
+        const pB = t2[1];
+        if (!isT1Win) {
+          matrix[pA][pB].wins += 1;
+          matrix[pB][pA].wins += 1;
+        } else {
+          matrix[pA][pB].losses += 1;
+          matrix[pB][pA].losses += 1;
+        }
+        matrix[pA][pB].matchIds.push(m.id);
+        matrix[pB][pA].matchIds.push(m.id);
+      }
+    });
+
+    return { players, matrix };
+  },
+
+  /**
    * Định dạng tiền tệ VNĐ (ví dụ: 291.338đ hoặc dạng k)
    */
   formatCurrency(amount, inThousands = false) {

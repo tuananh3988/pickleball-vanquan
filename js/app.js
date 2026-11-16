@@ -700,6 +700,9 @@ window.App = {
     // 3. Render Match Results Grid
     this.renderMatchesGrid(session.matches);
 
+    // 4. Render Ma trận Đứng Cùng Đồng Đội (Thắng / Thua)
+    this.renderTeammateMatrix(session);
+
     // Cập nhật dropdown filter người chơi trong trận đấu
     const matchFilter = document.getElementById('match-player-filter');
     if (matchFilter) {
@@ -796,6 +799,134 @@ window.App = {
     if (session) {
       this.renderMatchesGrid(session.matches, playerName);
     }
+  },
+
+  /**
+   * Render Ma trận Đứng Cùng Đồng Đội (Thắng / Thua) cho buổi đấu
+   */
+  renderTeammateMatrix(session) {
+    const container = document.getElementById('teammate-matrix-container');
+    if (!container) return;
+
+    if (!session || !session.matches || session.matches.length === 0) {
+      container.innerHTML = `
+        <div class="py-8 text-center text-slate-400 text-sm">
+          Chưa có dữ liệu thi đấu cho buổi này
+        </div>
+      `;
+      return;
+    }
+
+    const { players, matrix } = Calculator.calculateTeammateMatrix(session);
+    if (!players || players.length === 0) {
+      container.innerHTML = `
+        <div class="py-8 text-center text-slate-400 text-sm">
+          Chưa có dữ liệu người chơi
+        </div>
+      `;
+      return;
+    }
+
+    // Tiêu đề cột
+    const headerHtml = `
+      <thead>
+        <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
+          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[125px] sm:min-w-[140px] whitespace-nowrap">
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đồng đội</div>
+          </th>
+          ${players.map(p => {
+            const av = this.getPlayerAvatar(p);
+            return `
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[72px] sm:min-w-[85px] border-r border-slate-100 last:border-r-0">
+                <div class="flex flex-col items-center justify-center space-y-1">
+                  <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
+                  <span class="text-xs font-bold text-slate-700">${p}</span>
+                </div>
+              </th>
+            `;
+          }).join('')}
+        </tr>
+      </thead>
+    `;
+
+    // Từng hàng người chơi
+    const rowsHtml = players.map(p1 => {
+      const av1 = this.getPlayerAvatar(p1);
+      const cellsHtml = players.map(p2 => {
+        if (p1 === p2) {
+          return `
+            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
+              <span class="text-slate-300 font-bold text-xs">—</span>
+            </td>
+          `;
+        }
+
+        const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
+        const totalPlayed = cell.wins + cell.losses;
+
+        if (totalPlayed === 0) {
+          return `
+            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
+              —
+            </td>
+          `;
+        }
+
+        // Toàn thắng cùng nhau
+        if (cell.wins > 0 && cell.losses === 0) {
+          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
+          return `
+            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins} trận">
+                ${text}
+              </span>
+            </td>
+          `;
+        }
+
+        // Toàn thua cùng nhau
+        if (cell.losses > 0 && cell.wins === 0) {
+          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
+          return `
+            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thua ${cell.losses} trận">
+                ${text}
+              </span>
+            </td>
+          `;
+        }
+
+        // Cả thắng lẫn thua
+        return `
+          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
+              ${cell.wins}W - ${cell.losses}L
+            </span>
+          </td>
+        `;
+      }).join('');
+
+      return `
+        <tr class="hover:bg-slate-50/70 transition group">
+          <td class="py-2.5 px-3 text-left sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 whitespace-nowrap">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-full ${av1.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs flex-shrink-0">${av1.initials}</span>
+              <span class="font-bold text-slate-900 text-xs sm:text-sm">${p1}</span>
+            </div>
+          </td>
+          ${cellsHtml}
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <table class="w-full text-center border-collapse min-w-[650px] text-xs sm:text-sm">
+        ${headerHtml}
+        <tbody class="divide-y divide-slate-100">
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
   },
 
   /**
