@@ -473,6 +473,71 @@ window.App = {
   },
 
   /**
+   * Helper tạo HTML ô ma trận Thắng / Thua theo hiệu số:
+   * - win - lose > 0: màu xanh
+   * - win = lose: màu vàng
+   * - win < lose: màu đỏ
+   */
+  renderMatrixCell(cell, p1, p2, type = 'teammate') {
+    if (p1 === p2) {
+      return `
+        <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
+          <span class="text-slate-300 font-bold text-xs">—</span>
+        </td>
+      `;
+    }
+
+    const wins = cell.wins || 0;
+    const losses = cell.losses || 0;
+    const totalPlayed = wins + losses;
+
+    if (totalPlayed === 0) {
+      return `
+        <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
+          —
+        </td>
+      `;
+    }
+
+    const actionText = type === 'teammate' ? 'bắt cặp với' : 'đối đầu với';
+    const title = `${p1} ${actionText} ${p2}: Thắng ${wins}, Thua ${losses}`;
+    const diff = wins - losses;
+
+    // 1. win - lose > 0: màu xanh
+    if (diff > 0) {
+      const text = losses === 0 ? (wins > 1 ? `${wins} Win` : 'Win') : `${wins}W - ${losses}L`;
+      return `
+        <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+          <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${title}">
+            ${text}
+          </span>
+        </td>
+      `;
+    }
+
+    // 2. win < lose: màu đỏ
+    if (diff < 0) {
+      const text = wins === 0 ? (losses > 1 ? `${losses} Lose` : 'Lose') : `${wins}W - ${losses}L`;
+      return `
+        <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+          <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${title}">
+            ${text}
+          </span>
+        </td>
+      `;
+    }
+
+    // 3. win = lose: màu vàng
+    return `
+      <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
+        <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${title}">
+          ${wins}W - ${losses}L
+        </span>
+      </td>
+    `;
+  },
+
+  /**
    * Render Ma trận Đồng Đội trong Bảng Xếp Hạng (toàn giải / theo filter thời gian, không có cột tổng điểm)
    */
   renderLeaderboardTeammateMatrix() {
@@ -515,54 +580,8 @@ window.App = {
       const rank1 = playerRankMap ? playerRankMap[p1] : null;
       const rank1Text = rank1 ? ` (${rank1})` : '';
       const cellsHtml = players.map(p2 => {
-        if (p1 === p2) {
-          return `
-            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
-              <span class="text-slate-300 font-bold text-xs">—</span>
-            </td>
-          `;
-        }
-
         const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
-        const totalPlayed = cell.wins + cell.losses;
-
-        if (totalPlayed === 0) {
-          return `
-            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
-              —
-            </td>
-          `;
-        }
-
-        if (cell.wins > 0 && cell.losses === 0) {
-          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        if (cell.losses > 0 && cell.wins === 0) {
-          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thua ${cell.losses} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        return `
-          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
-              ${cell.wins}W - ${cell.losses}L
-            </span>
-          </td>
-        `;
+        return this.renderMatrixCell(cell, p1, p2, 'teammate');
       }).join('');
 
       return `
@@ -631,54 +650,8 @@ window.App = {
       const rank1 = playerRankMap ? playerRankMap[p1] : null;
       const rank1Text = rank1 ? ` (${rank1})` : '';
       const cellsHtml = players.map(p2 => {
-        if (p1 === p2) {
-          return `
-            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
-              <span class="text-slate-300 font-bold text-xs">—</span>
-            </td>
-          `;
-        }
-
         const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
-        const totalPlayed = cell.wins + cell.losses;
-
-        if (totalPlayed === 0) {
-          return `
-            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
-              —
-            </td>
-          `;
-        }
-
-        if (cell.wins > 0 && cell.losses === 0) {
-          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thắng ${cell.wins} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        if (cell.losses > 0 && cell.wins === 0) {
-          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thua ${cell.losses} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        return `
-          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
-              ${cell.wins}W - ${cell.losses}L
-            </span>
-          </td>
-        `;
+        return this.renderMatrixCell(cell, p1, p2, 'opponent');
       }).join('');
 
       return `
@@ -1111,57 +1084,8 @@ window.App = {
       const rank1 = playerRankMap ? playerRankMap[p1] : null;
       const rank1Text = rank1 ? ` (${rank1})` : '';
       const cellsHtml = players.map(p2 => {
-        if (p1 === p2) {
-          return `
-            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
-              <span class="text-slate-300 font-bold text-xs">—</span>
-            </td>
-          `;
-        }
-
         const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
-        const totalPlayed = cell.wins + cell.losses;
-
-        if (totalPlayed === 0) {
-          return `
-            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
-              —
-            </td>
-          `;
-        }
-
-        // Toàn thắng cùng nhau
-        if (cell.wins > 0 && cell.losses === 0) {
-          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        // Toàn thua cùng nhau
-        if (cell.losses > 0 && cell.wins === 0) {
-          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thua ${cell.losses} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        // Cả thắng lẫn thua
-        return `
-          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} bắt cặp với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
-              ${cell.wins}W - ${cell.losses}L
-            </span>
-          </td>
-        `;
+        return this.renderMatrixCell(cell, p1, p2, 'teammate');
       }).join('');
 
       const score = (teammateScores && teammateScores[p1]) || { totalPoints: 0, count: 0, avgPoints: "0.0" };
@@ -1260,57 +1184,8 @@ window.App = {
       const rank1 = playerRankMap ? playerRankMap[p1] : null;
       const rank1Text = rank1 ? ` (${rank1})` : '';
       const cellsHtml = players.map(p2 => {
-        if (p1 === p2) {
-          return `
-            <td class="py-2.5 px-2 text-center bg-slate-100/60 border-r border-slate-100 last:border-r-0 select-none">
-              <span class="text-slate-300 font-bold text-xs">—</span>
-            </td>
-          `;
-        }
-
         const cell = (matrix[p1] && matrix[p1][p2]) || { wins: 0, losses: 0 };
-        const totalPlayed = cell.wins + cell.losses;
-
-        if (totalPlayed === 0) {
-          return `
-            <td class="py-2.5 px-2 text-center border-r border-slate-100 last:border-r-0 text-slate-300 font-medium text-xs select-none">
-              —
-            </td>
-          `;
-        }
-
-        // Toàn thắng đối thủ
-        if (cell.wins > 0 && cell.losses === 0) {
-          const text = cell.wins > 1 ? `${cell.wins} Win` : 'Win';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thắng ${cell.wins} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        // Toàn thua đối thủ
-        if (cell.losses > 0 && cell.wins === 0) {
-          const text = cell.losses > 1 ? `${cell.losses} Lose` : 'Lose';
-          return `
-            <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300/80 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thua ${cell.losses} trận">
-                ${text}
-              </span>
-            </td>
-          `;
-        }
-
-        // Cả thắng lẫn thua đối thủ
-        return `
-          <td class="py-2 px-1.5 sm:px-2 text-center border-r border-slate-100 last:border-r-0">
-            <span class="inline-flex items-center justify-center px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs whitespace-nowrap" title="${p1} đối đầu với ${p2}: Thắng ${cell.wins}, Thua ${cell.losses}">
-              ${cell.wins}W - ${cell.losses}L
-            </span>
-          </td>
-        `;
+        return this.renderMatrixCell(cell, p1, p2, 'opponent');
       }).join('');
 
       const score = (opponentScores && opponentScores[p1]) || { totalPoints: 0, count: 0, avgPoints: "0.0" };
