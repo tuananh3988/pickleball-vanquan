@@ -336,7 +336,7 @@ window.Calculator = {
       p.rank = idx + 1;
     });
 
-    // Thống kê cặp đôi: sắp xếp theo số trận thắng - thua, tỉ lệ này đôi nào cao ở trên
+    // Thống kê cặp đôi: sắp xếp mặc định theo hiệu số thắng - thua, cao hơn ở trên; bằng nhau mới xét tỉ lệ thắng
     const pairs = Object.values(pairMap).map(pair => {
       const winRate = pair.matches > 0 ? (pair.wins / pair.matches * 100) : 0;
       const pointDiff = pair.wins - pair.losses;
@@ -347,17 +347,17 @@ window.Calculator = {
         winRateFormatted: winRate.toFixed(1)
       };
     }).sort((a, b) => {
-      // 1. Tỉ lệ thắng (%) đôi nào cao hơn ở trên
+      // 1. Hiệu số trận thắng - thua (wins - losses) đôi nào cao hơn ở trên
+      if (b.pointDiff !== a.pointDiff) {
+        return b.pointDiff - a.pointDiff;
+      }
+      // 2. Bằng nhau mới xét tới tỉ lệ thắng (%)
       if (b.winRate !== a.winRate) {
         return b.winRate - a.winRate;
       }
-      // 2. Nếu bằng tỉ lệ thắng: Số trận thắng nhiều hơn ở trên
+      // 3. Số trận thắng nhiều hơn ở trên
       if (b.wins !== a.wins) {
         return b.wins - a.wins;
-      }
-      // 3. Hiệu số trận thắng - thua (wins - losses) cao hơn ở trên
-      if (b.pointDiff !== a.pointDiff) {
-        return b.pointDiff - a.pointDiff;
       }
       // 4. Số trận đã đấu nhiều hơn ở trên
       return b.matches - a.matches;
@@ -457,18 +457,20 @@ window.Calculator = {
         }
       });
 
-      // Đếm số buổi có mặt của người chơi
-      const sessionPlayerNames = new Set();
-      (session.matches || []).forEach(m => {
-        [...(m.team1 || []), ...(m.team2 || [])].forEach(n => sessionPlayerNames.add(n.trim()));
-      });
-      beerList.forEach(n => sessionPlayerNames.add(n));
+      // Đếm số buổi có mặt của người chơi (Chỉ tính những buổi CLB thực tế có tổ chức đi bia / tăng 2)
+      if (sessionBeerExpense > 0 || beerCount > 0) {
+        const sessionPlayerNames = new Set();
+        (session.matches || []).forEach(m => {
+          [...(m.team1 || []), ...(m.team2 || [])].forEach(n => sessionPlayerNames.add(mapCanonicalName(n)));
+        });
+        beerList.forEach(n => sessionPlayerNames.add(n));
 
-      sessionPlayerNames.forEach(name => {
-        if (playerBeerMap[name]) {
-          playerBeerMap[name].playedSessions += 1;
-        }
-      });
+        sessionPlayerNames.forEach(name => {
+          if (playerBeerMap[name]) {
+            playerBeerMap[name].playedSessions += 1;
+          }
+        });
+      }
 
       // Ghi nhận đi bia
       beerList.forEach(name => {

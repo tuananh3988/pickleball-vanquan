@@ -833,7 +833,7 @@ window.App = {
     ['name', 'matches', 'wins', 'winRate'].forEach(col => {
       const el = document.getElementById(`pair-sort-icon-${col}`);
       if (el) {
-        if (key === col || (key === 'default' && col === 'winRate')) {
+        if (key === col || (key === 'default' && col === 'wins')) {
           el.textContent = direction === 'desc' ? '↓' : '↑';
           el.className = 'text-[10px] text-emerald-600 font-bold';
         } else {
@@ -843,22 +843,24 @@ window.App = {
       }
     });
 
-    if (key === 'winRate' || key === 'default') {
+    if (key === 'default' || key === 'wins') {
+      // Sắp xếp mặc định: Hiệu số thắng - thua (wins - losses) cao hơn ở trên; bằng nhau mới xét tỉ lệ thắng
       pairs.sort((a, b) => {
+        const diffB = b.wins - b.losses;
+        const diffA = a.wins - a.losses;
+        if (diffB !== diffA) return (diffB - diffA) * factor;
         if (b.winRate !== a.winRate) return (b.winRate - a.winRate) * factor;
         if (b.wins !== a.wins) return (b.wins - a.wins) * factor;
-        const diffB = b.wins - b.losses;
-        const diffA = a.wins - a.losses;
-        if (diffB !== diffA) return (diffB - diffA) * factor;
         return (b.matches - a.matches) * factor;
       });
-    } else if (key === 'wins') {
+    } else if (key === 'winRate') {
       pairs.sort((a, b) => {
-        if (b.wins !== a.wins) return (b.wins - a.wins) * factor;
+        if (b.winRate !== a.winRate) return (b.winRate - a.winRate) * factor;
         const diffB = b.wins - b.losses;
         const diffA = a.wins - a.losses;
         if (diffB !== diffA) return (diffB - diffA) * factor;
-        return (b.winRate - a.winRate) * factor;
+        if (b.wins !== a.wins) return (b.wins - a.wins) * factor;
+        return (b.matches - a.matches) * factor;
       });
     } else if (key === 'matches') {
       pairs.sort((a, b) => (b.matches - a.matches) * factor || (b.wins - a.wins) * factor);
