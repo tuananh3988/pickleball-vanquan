@@ -501,41 +501,42 @@ window.App = {
     const trimmed = name.trim();
     let initials = '';
 
-    // Khởi tạo chữ viết tắt tương ứng theo ảnh mẫu của CLB
-    if (trimmed === 'Tùng nhỏ' || trimmed === 'Tùng 86') initials = 'Tn';
+    // Khởi tạo chữ viết tắt tương ứng cho từng VĐV
+    if (trimmed === 'Tùng 86') initials = 'T86';
+    else if (trimmed === 'Tùng 89') initials = 'T89';
+    else if (trimmed === 'Tùng') initials = 'T';
     else if (trimmed === 'Luân') initials = 'L';
     else if (trimmed === 'Đạt') initials = 'Đ';
     else if (trimmed === 'Tuấn Anh') initials = 'TA';
     else if (trimmed === 'Khiêm') initials = 'K';
-    else if (trimmed === 'Tuấn') initials = 'T';
-    else if (trimmed === 'Tùng trọc' || trimmed === 'Tùng 89') initials = 'Tt';
-    else if (trimmed === 'HAnh' || trimmed === 'Hoài Anh') initials = 'HA';
-    else if (trimmed === 'Tùng lớn' || trimmed === 'Tùng') initials = 'TL';
+    else if (trimmed === 'Tuấn') initials = 'Tu';
+    else if (trimmed === 'Hoài Anh' || trimmed === 'HAnh') initials = 'HA';
     else if (trimmed === 'Cường') initials = 'C';
     else if (trimmed === 'Bình') initials = 'B';
+    else if (trimmed === 'Quân') initials = 'Q';
+    else if (trimmed === 'Công') initials = 'Co';
     else {
       const parts = trimmed.split(/\s+/);
       if (parts.length === 1) initials = parts[0].charAt(0).toUpperCase();
       else initials = parts[0].charAt(0).toUpperCase() + parts[parts.length - 1].charAt(0);
     }
 
-    // Bảng màu pastel nhẹ nhàng đồng bộ với ảnh
+    // Bảng màu pastel nhẹ nhàng đồng bộ
     const colorMap = {
-      'Tùng nhỏ': 'bg-[#e2e8dd] text-[#3d5236]',
       'Tùng 86': 'bg-[#e2e8dd] text-[#3d5236]',
+      'Tùng 89': 'bg-[#e4e7e2] text-[#42523f]',
+      'Tùng': 'bg-[#fceadc] text-[#924b1f]',
       'Luân': 'bg-[#fae5d9] text-[#9c4d21]',
       'Đạt': 'bg-[#e3e8ea] text-[#37525a]',
       'Tuấn Anh': 'bg-[#e4ebf5] text-[#294c74]',
       'Khiêm': 'bg-[#e1e9df] text-[#395636]',
       'Tuấn': 'bg-[#fae6dd] text-[#974e2d]',
-      'Tùng trọc': 'bg-[#e4e7e2] text-[#42523f]',
-      'Tùng 89': 'bg-[#e4e7e2] text-[#42523f]',
-      'HAnh': 'bg-[#e6e2f5] text-[#48378a]',
       'Hoài Anh': 'bg-[#e6e2f5] text-[#48378a]',
-      'Tùng lớn': 'bg-[#fceadc] text-[#924b1f]',
-      'Tùng': 'bg-[#fceadc] text-[#924b1f]',
+      'HAnh': 'bg-[#e6e2f5] text-[#48378a]',
       'Cường': 'bg-[#e2ecf2] text-[#27536d]',
-      'Bình': 'bg-[#e7f0e4] text-[#2f6128]'
+      'Bình': 'bg-[#e7f0e4] text-[#2f6128]',
+      'Quân': 'bg-[#e5ecf6] text-[#2b4c7e]',
+      'Công': 'bg-[#f5e8dd] text-[#8e4b23]'
     };
 
     const bgClass = colorMap[trimmed] || 'bg-stone-200 text-stone-700';

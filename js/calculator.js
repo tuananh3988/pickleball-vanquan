@@ -11,9 +11,6 @@ function mapCanonicalName(n) {
   const lower = trimmed.toLowerCase();
   
   if (lower === 'hanh' || lower === 'hoài anh' || lower === 'hoai anh') return 'Hoài Anh';
-  if (lower === 'tùng lớn') return 'Tùng';
-  if (lower === 'tùng nhỏ') return 'Tùng 86';
-  if (lower === 'tùng trọc') return 'Tùng 89';
 
   return trimmed;
 }
