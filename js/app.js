@@ -864,7 +864,7 @@ window.App = {
           }).join('')}
           <th class="py-2.5 px-3 text-center whitespace-nowrap bg-emerald-50/90 border-l-2 border-emerald-200 min-w-[95px] sm:min-w-[110px]">
             <div class="flex flex-col items-center justify-center space-y-0.5">
-              <span class="text-xs font-black text-emerald-900">Tổng Điểm Partner</span>
+              <span class="text-xs font-black text-emerald-900">Điểm TB Partner</span>
               <span class="text-[10px] text-emerald-700 font-medium">Partner thấp = điểm cao</span>
             </div>
           </th>
@@ -935,8 +935,8 @@ window.App = {
       const scoreCellHtml = `
         <td class="py-2 px-2 text-center bg-emerald-50/40 border-l-2 border-emerald-100 whitespace-nowrap">
           <div class="flex flex-col items-center justify-center">
-            <span class="font-black text-emerald-800 text-sm sm:text-base">${score.totalPoints}</span>
-            <span class="text-[10px] text-slate-400 font-medium">TB: ${score.avgPoints}</span>
+            <span class="font-black text-emerald-800 text-sm sm:text-base">${score.avgPoints}</span>
+            <span class="text-[10px] text-slate-400 font-medium">Tổng: ${score.totalPoints}</span>
           </div>
         </td>
       `;
@@ -1013,7 +1013,7 @@ window.App = {
           }).join('')}
           <th class="py-2.5 px-3 text-center whitespace-nowrap bg-rose-50/90 border-l-2 border-rose-200 min-w-[95px] sm:min-w-[110px]">
             <div class="flex flex-col items-center justify-center space-y-0.5">
-              <span class="text-xs font-black text-rose-900">Tổng Điểm Đối Thủ</span>
+              <span class="text-xs font-black text-rose-900">Điểm TB Đối Thủ</span>
               <span class="text-[10px] text-rose-700 font-medium">Điểm thấp = đối thủ khỏe</span>
             </div>
           </th>
@@ -1084,8 +1084,8 @@ window.App = {
       const scoreCellHtml = `
         <td class="py-2 px-2 text-center bg-rose-50/40 border-l-2 border-rose-100 whitespace-nowrap">
           <div class="flex flex-col items-center justify-center">
-            <span class="font-black text-rose-800 text-sm sm:text-base">${score.totalPoints}</span>
-            <span class="text-[10px] text-slate-400 font-medium">TB: ${score.avgPoints}</span>
+            <span class="font-black text-rose-800 text-sm sm:text-base">${score.avgPoints}</span>
+            <span class="text-[10px] text-slate-400 font-medium">Tổng: ${score.totalPoints}</span>
           </div>
         </td>
       `;
