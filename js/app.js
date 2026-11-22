@@ -724,6 +724,12 @@ window.App = {
     else if (trimmed === 'Bình') initials = 'B';
     else if (trimmed === 'Quân') initials = 'Q';
     else if (trimmed === 'Công') initials = 'Co';
+    else if (trimmed === 'Tiến') initials = 'Ti';
+    else if (trimmed === 'Sơn') initials = 'S';
+    else if (trimmed === 'Hưng') initials = 'H';
+    else if (trimmed === 'Đức') initials = 'Đ';
+    else if (trimmed === 'Vững') initials = 'V';
+    else if (trimmed === 'Tín') initials = 'Tín';
     else {
       const parts = trimmed.split(/\s+/);
       if (parts.length === 1) initials = parts[0].charAt(0).toUpperCase();
@@ -745,7 +751,13 @@ window.App = {
       'Cường': 'bg-[#e2ecf2] text-[#27536d]',
       'Bình': 'bg-[#e7f0e4] text-[#2f6128]',
       'Quân': 'bg-[#e5ecf6] text-[#2b4c7e]',
-      'Công': 'bg-[#f5e8dd] text-[#8e4b23]'
+      'Công': 'bg-[#f5e8dd] text-[#8e4b23]',
+      'Tiến': 'bg-[#d9ead3] text-[#274e13]',
+      'Sơn': 'bg-[#fce5cd] text-[#783f04]',
+      'Đức': 'bg-[#d0e0e3] text-[#0c343d]',
+      'Hưng': 'bg-[#fff2cc] text-[#7f6000]',
+      'Vững': 'bg-[#ead1dc] text-[#4c1130]',
+      'Tín': 'bg-[#d9d2e9] text-[#20124d]'
     };
 
     const bgClass = colorMap[trimmed] || 'bg-stone-200 text-stone-700';
