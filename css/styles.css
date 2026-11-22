@@ -63,3 +63,75 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
 }
+
+/* =======================================================
+   BẢNG MA TRẬN: GIỚI HẠN TỐI ĐA 12 DÒNG & CUỘN 2 CHIỀU
+   Dùng chung cho cả "Chi tiết buổi chơi" và "Bảng xếp hạng"
+   ======================================================= */
+.matrix-scroll-container {
+  /* Tối đa khoảng 12 dòng hiển thị (mỗi dòng ~44px + tiêu đề ~65px).
+     Chỉnh chiều cao hiển thị tối đa tại đây: */
+  max-height: 585px;
+  overflow: auto;
+  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.matrix-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.matrix-scroll-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+.matrix-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.matrix-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Bảng ma trận: border-collapse separate giúp cố định dòng/cột mượt mà */
+.matrix-scroll-container table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Cố định dòng tiêu đề (thead) khi cuộn dọc */
+.matrix-scroll-container thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Ô góc trên cùng bên trái: Cố định cả chiều ngang lẫn dọc */
+.matrix-scroll-container thead th:first-child {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 35;
+  background-color: #f1f5f9 !important; /* bg-slate-100 */
+  border-right: 2px solid #e2e8f0;
+}
+
+/* Cố định cột VĐV bên trái khi cuộn ngang */
+.matrix-scroll-container tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  background-color: #ffffff !important;
+  border-right: 2px solid #e2e8f0;
+}
+
+.matrix-scroll-container tbody tr:hover td:first-child {
+  background-color: #f8fafc !important;
+}
+
+/* Viền ngăn cách giữa các dòng */
+.matrix-scroll-container tbody tr td {
+  border-bottom: 1px solid #f1f5f9;
+}

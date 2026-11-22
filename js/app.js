@@ -555,7 +555,7 @@ window.App = {
     const headerHtml = `
       <thead>
         <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
-          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
+          <th class="py-2.5 px-3 text-left sticky left-0 top-0 bg-slate-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đồng đội</div>
           </th>
           ${players.map(p => {
@@ -563,7 +563,7 @@ window.App = {
             const rank = playerRankMap ? playerRankMap[p] : null;
             const rankText = rank ? ` (${rank})` : '';
             return `
-              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0 sticky top-0 bg-slate-50 z-20">
                 <div class="flex flex-col items-center justify-center space-y-1">
                   <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
                   <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
@@ -625,7 +625,7 @@ window.App = {
     const headerHtml = `
       <thead>
         <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
-          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
+          <th class="py-2.5 px-3 text-left sticky left-0 top-0 bg-slate-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đối thủ</div>
           </th>
           ${players.map(p => {
@@ -633,7 +633,7 @@ window.App = {
             const rank = playerRankMap ? playerRankMap[p] : null;
             const rankText = rank ? ` (${rank})` : '';
             return `
-              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0 sticky top-0 bg-slate-50 z-20">
                 <div class="flex flex-col items-center justify-center space-y-1">
                   <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
                   <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
@@ -1067,7 +1067,7 @@ window.App = {
     const headerHtml = `
       <thead>
         <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
-          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
+          <th class="py-2.5 px-3 text-left sticky left-0 top-0 bg-slate-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đồng đội</div>
           </th>
           ${players.map(p => {
@@ -1075,7 +1075,7 @@ window.App = {
             const rank = playerRankMap ? playerRankMap[p] : null;
             const rankText = rank ? ` (${rank})` : '';
             return `
-              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0 sticky top-0 bg-slate-50 z-20">
                 <div class="flex flex-col items-center justify-center space-y-1">
                   <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
                   <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
@@ -1083,7 +1083,7 @@ window.App = {
               </th>
             `;
           }).join('')}
-          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-emerald-50/90 border-l-2 border-emerald-200 min-w-[85px] sm:min-w-[100px]">
+          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-emerald-50 border-l-2 border-emerald-200 min-w-[85px] sm:min-w-[100px] sticky top-0 z-20">
             <span class="text-xs font-black text-emerald-900">Điểm TB Partner</span>
           </th>
         </tr>
@@ -1164,7 +1164,7 @@ window.App = {
     const headerHtml = `
       <thead>
         <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700">
-          <th class="py-2.5 px-3 text-left sticky left-0 bg-slate-100/95 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
+          <th class="py-2.5 px-3 text-left sticky left-0 top-0 bg-slate-100 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] border-r border-slate-200 min-w-[135px] sm:min-w-[155px] whitespace-nowrap">
             <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">VĐV \\ Đối thủ</div>
           </th>
           ${players.map(p => {
@@ -1172,7 +1172,7 @@ window.App = {
             const rank = playerRankMap ? playerRankMap[p] : null;
             const rankText = rank ? ` (${rank})` : '';
             return `
-              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0">
+              <th class="py-2.5 px-2 text-center whitespace-nowrap min-w-[76px] sm:min-w-[90px] border-r border-slate-100 last:border-r-0 sticky top-0 bg-slate-50 z-20">
                 <div class="flex flex-col items-center justify-center space-y-1">
                   <span class="w-6 h-6 rounded-full ${av.bgClass} flex items-center justify-center text-[10px] font-extrabold shadow-2xs">${av.initials}</span>
                   <span class="text-xs font-bold text-slate-700">${p}<span class="text-slate-400 font-semibold text-[11px]">${rankText}</span></span>
@@ -1180,7 +1180,7 @@ window.App = {
               </th>
             `;
           }).join('')}
-          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-rose-50/90 border-l-2 border-rose-200 min-w-[95px] sm:min-w-[110px]">
+          <th class="py-2.5 px-3 text-center whitespace-nowrap bg-rose-50 border-l-2 border-rose-200 min-w-[95px] sm:min-w-[110px] sticky top-0 z-20">
             <div class="flex flex-col items-center justify-center space-y-0.5">
               <span class="text-xs font-black text-rose-900">Điểm TB Đối Thủ</span>
               <span class="text-[10px] text-rose-700 font-medium">Điểm thấp = đối thủ khỏe</span>
