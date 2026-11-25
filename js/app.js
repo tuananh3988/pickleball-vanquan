@@ -27,6 +27,7 @@ window.App = {
     }
 
     this.initSessionSelect();
+    this.renderTimeFilterButtons();
     this.renderLeaderboard();
     this.renderSessionDetail();
     this.renderPairs();
@@ -107,10 +108,106 @@ window.App = {
   },
 
   /**
+   * Lấy danh sách tối đa 2 tháng gần nhất (theo dữ liệu và mốc thời gian thực tế)
+   */
+  getRecentMonths() {
+    const sessions = window.PICKLEBALL_DATA ? (window.PICKLEBALL_DATA.sessions || []) : [];
+    const monthMap = new Map();
+
+    // 1. Thu thập tất cả các tháng từ sessions
+    sessions.forEach(s => {
+      if (!s.date) return;
+      const parts = s.date.split('-');
+      if (parts.length >= 2) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(y) && !isNaN(m)) {
+          const key = `${y}-${String(m).padStart(2, '0')}`;
+          monthMap.set(key, { year: y, month: m });
+        }
+      }
+    });
+
+    // 2. Tìm tháng sớm nhất của CLB từ dữ liệu
+    let earliestKey = null;
+    for (const k of monthMap.keys()) {
+      if (!earliestKey || k < earliestKey) earliestKey = k;
+    }
+
+    // 3. Thêm tháng hiện tại và tháng trước đó (nếu >= tháng bắt đầu giải)
+    const now = new Date();
+    const nowY = now.getFullYear();
+    const nowM = now.getMonth() + 1;
+    const nowKey = `${nowY}-${String(nowM).padStart(2, '0')}`;
+
+    if (earliestKey && nowKey >= earliestKey) {
+      monthMap.set(nowKey, { year: nowY, month: nowM });
+    }
+
+    const prevDate = new Date(nowY, nowM - 2, 1);
+    const prevY = prevDate.getFullYear();
+    const prevM = prevDate.getMonth() + 1;
+    const prevKey = `${prevY}-${String(prevM).padStart(2, '0')}`;
+    if (earliestKey && prevKey >= earliestKey) {
+      monthMap.set(prevKey, { year: prevY, month: prevM });
+    }
+
+    // 4. Sắp xếp giảm dần (tháng mới nhất trước) và lấy tối đa 2 tháng gần nhất
+    const sortedKeys = Array.from(monthMap.keys()).sort().reverse();
+    const recentKeys = sortedKeys.slice(0, 2);
+
+    return recentKeys.map(k => monthMap.get(k));
+  },
+
+  /**
+   * Render các nút bộ lọc thời gian động (Tất cả, tối đa 2 tháng gần nhất, Tuần này)
+   */
+  renderTimeFilterButtons() {
+    const container = document.getElementById('time-filter-container');
+    if (!container) return;
+
+    const recentMonths = this.getRecentMonths();
+    const activeType = (this.currentFilter && this.currentFilter.type) || 'all';
+    let activeKey = 'all';
+
+    if (activeType === 'month') {
+      activeKey = `month-${this.currentFilter.year}-${this.currentFilter.month}`;
+    } else if (activeType === 'week') {
+      activeKey = 'week';
+    }
+
+    const activeClass = "filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 bg-white text-slate-900 font-bold shadow-sm";
+    const inactiveClass = "filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
+
+    let html = `
+      <button onclick="App.setTimeFilter('all')" class="${activeKey === 'all' ? activeClass : inactiveClass}" data-filter="all">
+        Tất cả
+      </button>
+    `;
+
+    recentMonths.forEach(m => {
+      const key = `month-${m.year}-${m.month}`;
+      const isActive = activeKey === key;
+      html += `
+        <button onclick="App.setTimeFilter('month', ${m.year}, ${m.month})" class="${isActive ? activeClass : inactiveClass}" data-filter="${key}" title="Tháng ${m.month}/${m.year}">
+          Tháng ${m.month}
+        </button>
+      `;
+    });
+
+    html += `
+      <button onclick="App.setTimeFilter('week')" class="${activeKey === 'week' ? activeClass : inactiveClass}" data-filter="week">
+        Tuần này
+      </button>
+    `;
+
+    container.innerHTML = html;
+  },
+
+  /**
    * Đặt bộ lọc thời gian cho Bảng Xếp Hạng
    */
-  setTimeFilter(type) {
-    // Xác định năm, quý, tháng, tuần hiện tại từ dữ liệu
+  setTimeFilter(type, year, month) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
@@ -119,29 +216,37 @@ window.App = {
 
     let filterObj = { type };
     let label = "Đang xem: Toàn thời gian (All-time)";
+    let activeKey = 'all';
 
     if (type === 'year') {
       filterObj.year = currentYear;
       label = `Đang xem: Năm ${currentYear}`;
+      activeKey = 'year';
     } else if (type === 'quarter') {
       filterObj.year = currentYear;
       filterObj.quarter = currentQuarter;
       label = `Đang xem: Quý ${currentQuarter} - Năm ${currentYear}`;
+      activeKey = 'quarter';
     } else if (type === 'month') {
-      filterObj.year = currentYear;
-      filterObj.month = currentMonth;
-      label = `Đang xem: Tháng ${currentMonth} / ${currentYear}`;
+      const targetYear = year ? parseInt(year, 10) : currentYear;
+      const targetMonth = month ? parseInt(month, 10) : currentMonth;
+      filterObj.year = targetYear;
+      filterObj.month = targetMonth;
+      label = `Đang xem: Tháng ${targetMonth} / ${targetYear}`;
+      activeKey = `month-${targetYear}-${targetMonth}`;
     } else if (type === 'week') {
       filterObj.year = currentYear;
       filterObj.week = currentWeek;
       label = `Đang xem: Tuần ${currentWeek} - Năm ${currentYear}`;
+      activeKey = 'week';
     }
 
     this.currentFilter = filterObj;
 
     // Cập nhật giao diện nút filter
     document.querySelectorAll('.filter-pill').forEach(pill => {
-      if (pill.getAttribute('data-filter') === type) {
+      const pillFilter = pill.getAttribute('data-filter');
+      if (pillFilter === activeKey || (type === 'month' && pillFilter === 'month')) {
         pill.className = "filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 bg-white text-slate-900 font-bold shadow-sm";
       } else {
         pill.className = "filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900";
@@ -1628,6 +1733,7 @@ window.App = {
     }));
 
     if (anyUpdated) {
+      this.renderTimeFilterButtons();
       this.renderLeaderboard();
       this.renderSessionDetail();
       this.renderPairs();

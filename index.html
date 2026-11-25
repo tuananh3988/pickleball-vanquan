@@ -44,7 +44,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/styles.css?v=20261125_0910">
+  <link rel="stylesheet" href="css/styles.css?v=20261125_1035">
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 antialiased flex flex-col">
 
@@ -336,17 +336,11 @@
           </div>
 
           <!-- Time Range Filter Pills -->
-          <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium">
+          <div id="time-filter-container" class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium">
             <button onclick="App.setTimeFilter('all')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 bg-white text-slate-900 font-bold shadow-sm" data-filter="all">
               Tất cả
             </button>
-            <button onclick="App.setTimeFilter('year')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="year">
-              Năm 2026
-            </button>
-            <button onclick="App.setTimeFilter('quarter')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="quarter">
-              Quý 4
-            </button>
-            <button onclick="App.setTimeFilter('month')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="month">
+            <button onclick="App.setTimeFilter('month', 2026, 11)" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="month-2026-11" title="Tháng 11/2026">
               Tháng 11
             </button>
             <button onclick="App.setTimeFilter('week')" class="filter-pill px-3 py-1.5 rounded-lg transition-all duration-150 text-slate-600 hover:text-slate-900" data-filter="week">
@@ -820,8 +814,8 @@
   </footer>
 
   <!-- SCRIPTS -->
-  <script src="js/data.js?v=20261125_0910"></script>
-  <script src="js/calculator.js?v=20261125_0910"></script>
-  <script src="js/app.js?v=20261125_0910"></script>
+  <script src="js/data.js?v=20261125_1035"></script>
+  <script src="js/calculator.js?v=20261125_1035"></script>
+  <script src="js/app.js?v=20261125_1035"></script>
 </body>
 </html>
