@@ -835,6 +835,7 @@ window.App = {
     else if (trimmed === 'Đức') initials = 'Đ';
     else if (trimmed === 'Vững') initials = 'V';
     else if (trimmed === 'Tín') initials = 'Tín';
+    else if (trimmed === 'Dũng') initials = 'D';
     else {
       const parts = trimmed.split(/\s+/);
       if (parts.length === 1) initials = parts[0].charAt(0).toUpperCase();
@@ -862,7 +863,8 @@ window.App = {
       'Đức': 'bg-[#d0e0e3] text-[#0c343d]',
       'Hưng': 'bg-[#fff2cc] text-[#7f6000]',
       'Vững': 'bg-[#ead1dc] text-[#4c1130]',
-      'Tín': 'bg-[#d9d2e9] text-[#20124d]'
+      'Tín': 'bg-[#d9d2e9] text-[#20124d]',
+      'Dũng': 'bg-[#e6f4ea] text-[#137333]'
     };
 
     const bgClass = colorMap[trimmed] || 'bg-stone-200 text-stone-700';
@@ -972,17 +974,28 @@ window.App = {
     const tbody = document.getElementById('session-finances-tbody');
     if (tbody) {
       tbody.innerHTML = playerRows.map(p => {
-        let rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-slate-100 text-slate-600">#${p.rank}</span>`;
+        let rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-bold text-slate-400">—</span>`;
         if (p.rank === 1) {
           rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">🥇 1</span>`;
         } else if (p.rank === 2) {
           rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs">🥈 2</span>`;
         } else if (p.rank === 3) {
           rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-amber-50 text-amber-900 border border-amber-500/40 shadow-2xs">🥉 3</span>`;
+        } else if (p.rank > 3) {
+          rankBadge = `<span class="inline-flex items-center justify-center min-w-[26px] h-6 px-1 rounded text-xs font-black bg-slate-100 text-slate-600">#${p.rank}</span>`;
         }
 
+        const isPick = p.isPick !== false;
+        const matchesDisplay = isPick ? p.matches : '<span class="text-slate-400">—</span>';
+        const winsDisplay = isPick ? `<span class="font-bold text-[#1f6838]">${p.wins}</span>` : '<span class="text-slate-400">—</span>';
+        const lossesDisplay = isPick ? p.losses : '<span class="text-slate-400">—</span>';
+        const lossPenaltyDisplay = isPick ? Calculator.formatCurrency(p.matchLossPenalty !== undefined ? p.matchLossPenalty : (p.losses * 10000)) : '0k';
+        const extraBetDisplay = p.extraBet > 0 ? Calculator.formatCurrency(p.extraBet) : '0k';
+        const pickCostDisplay = isPick ? Calculator.formatCurrency(p.pickCost) : '<span class="text-slate-400">—</span>';
+        const beerCostDisplay = p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—';
+
         return `
-          <tr class="hover:bg-slate-50/70 transition group">
+          <tr class="hover:bg-slate-50/70 transition group ${!isPick ? 'bg-amber-50/20' : ''}">
             <td class="py-3 px-2 text-center sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100 w-12 min-w-[48px] max-w-[48px] whitespace-nowrap">
               ${rankBadge}
             </td>
@@ -992,13 +1005,13 @@ window.App = {
                 ${p.isBeer ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200/60 whitespace-nowrap flex-shrink-0">🍻 Đi bia</span>' : ''}
               </div>
             </td>
-            <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.matches}</td>
-            <td class="py-3 px-2 text-center font-bold text-[#1f6838] whitespace-nowrap">${p.wins}</td>
-            <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${p.losses}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.matchLossPenalty !== undefined ? p.matchLossPenalty : (p.losses * 10000))}</td>
-            <td class="py-3 px-3 text-right ${p.extraBet > 0 ? 'text-amber-700 font-bold' : 'text-slate-400'} font-normal text-xs sm:text-sm whitespace-nowrap">${p.extraBet > 0 ? Calculator.formatCurrency(p.extraBet) : '0k'}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.pickCost)}</td>
-            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${p.isBeer ? Calculator.formatCurrency(p.beerCost) : '—'}</td>
+            <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${matchesDisplay}</td>
+            <td class="py-3 px-2 text-center whitespace-nowrap">${winsDisplay}</td>
+            <td class="py-3 px-2 text-center text-slate-600 font-normal whitespace-nowrap">${lossesDisplay}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${lossPenaltyDisplay}</td>
+            <td class="py-3 px-3 text-right ${p.extraBet > 0 ? 'text-amber-700 font-bold' : 'text-slate-400'} font-normal text-xs sm:text-sm whitespace-nowrap">${extraBetDisplay}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${pickCostDisplay}</td>
+            <td class="py-3 px-3 text-right text-slate-600 font-normal text-xs sm:text-sm whitespace-nowrap">${beerCostDisplay}</td>
             <td class="py-3 px-3 text-right bg-[#f7f8f3] font-bold text-[#143d25] text-xs sm:text-sm whitespace-nowrap">${Calculator.formatCurrency(p.totalFinal)}</td>
             <td class="py-3 px-2 text-center whitespace-nowrap">
               ${p.isPaid
@@ -1047,8 +1060,9 @@ window.App = {
     // Cập nhật dropdown filter người chơi trong trận đấu
     const matchFilter = document.getElementById('match-player-filter');
     if (matchFilter) {
-      matchFilter.innerHTML = `<option value="">Tất cả VĐV (${playerRows.length} người)</option>` +
-        playerRows.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      const pickPlayers = playerRows.filter(p => p.isPick !== false);
+      matchFilter.innerHTML = `<option value="">Tất cả VĐV (${pickPlayers.length} người)</option>` +
+        pickPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
     }
 
     if (window.lucide) {
@@ -1619,7 +1633,11 @@ window.App = {
     playerRows.forEach((p, idx) => {
       const beerText = p.isBeer ? ` + Bia: ${Calculator.formatCurrency(p.beerCost)}` : '';
       const paidStatus = p.isPaid ? ' (✓ Đã thanh toán)' : '';
-      text += `${idx + 1}. ${p.name} (${p.matches} trận, ${p.wins}T-${p.losses}B): ${Calculator.formatCurrency(p.totalFinal)} [Pick: ${Calculator.formatCurrency(p.pickCost)}${beerText}]${paidStatus}\n`;
+      if (p.isPick !== false) {
+        text += `${idx + 1}. ${p.name} (${p.matches} trận, ${p.wins}T-${p.losses}B): ${Calculator.formatCurrency(p.totalFinal)} [Pick: ${Calculator.formatCurrency(p.pickCost)}${beerText}]${paidStatus}\n`;
+      } else {
+        text += `${idx + 1}. ${p.name} (Chỉ đi bia): ${Calculator.formatCurrency(p.totalFinal)} [Bia: ${Calculator.formatCurrency(p.beerCost)}]${paidStatus}\n`;
+      }
     });
 
     text += `\n💵 TỔNG CỘNG CẢ BUỔI: ${Calculator.formatCurrency(summary.totalAllExpenses)}\n`;

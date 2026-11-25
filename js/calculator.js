@@ -23,15 +23,16 @@ window.Calculator = {
    * @param {number} defaultPenalty - Tiền phạt thua mỗi trận (mặc định 10.000đ)
    */
   calculateSessionFinancials(session, defaultPenalty = 10000) {
-    if (!session || !session.matches || session.matches.length === 0) {
+    if (!session) {
       return null;
     }
 
+    const matches = session.matches || [];
     const penaltyRate = session.lossPenaltyRate || defaultPenalty;
     const playerStats = {};
 
     // 1. Phân tích kết quả các trận đấu
-    session.matches.forEach(match => {
+    matches.forEach(match => {
       const isTeam1Win = match.score1 > match.score2;
       const t1 = (match.team1 || []).map(mapCanonicalName);
       const t2 = (match.team2 || []).map(mapCanonicalName);
@@ -72,16 +73,16 @@ window.Calculator = {
       });
     });
 
-    const playersList = Object.values(playerStats);
-    const totalPlayers = playersList.length;
+    const pickPlayersList = Object.values(playerStats);
+    const totalPickPlayers = pickPlayersList.length;
 
-    // 2. Tính tiền phạt thua và độ thêm
+    // 2. Tính tiền phạt thua và độ thêm (chỉ tính cho người chơi pick)
     let totalLossPenalty = 0;
     let totalMatchLoss = 0;
     let totalExtraBet = 0;
     const normalizeName = str => mapCanonicalName(str).toLowerCase();
 
-    playersList.forEach(p => {
+    pickPlayersList.forEach(p => {
       const pNorm = normalizeName(p.name);
       let extra = p.extraBet || 0;
       if (session.extraBets) {
@@ -109,15 +110,15 @@ window.Calculator = {
     const balls = exp.balls || 0;
     const totalPickExpense = court + water + balls;
 
-    // Số tiền Pick còn thiếu sau khi lấy tiền phạt bù vào
+    // Số tiền Pick còn thiếu sau khi lấy tiền phạt bù vào (chỉ chia cho người đi đánh pick)
     const remainingPickExpense = totalPickExpense - totalLossPenalty;
-    const rawPickPerPerson = totalPlayers > 0 ? (remainingPickExpense / totalPlayers) : 0;
+    const rawPickPerPerson = totalPickPlayers > 0 ? (remainingPickExpense / totalPickPlayers) : 0;
     // Làm tròn tiền chia: trên 500đ thì làm tròn lên, dưới 500đ thì làm tròn xuống (hàng nghìn)
     const pickPerPerson = Math.round(rawPickPerPerson / 1000) * 1000;
 
     // 4. Tính tiền Bia
     const totalBeerExpense = exp.beer || 0;
-    const rawBeerParticipants = session.beerParticipants || [];
+    const rawBeerParticipants = (session.beerParticipants || []).map(mapCanonicalName).filter(Boolean);
     const beerCount = rawBeerParticipants.length;
     const rawBeerPerPerson = beerCount > 0 ? (totalBeerExpense / beerCount) : 0;
     // Làm tròn tiền chia: trên 500đ thì làm tròn lên, dưới 500đ thì làm tròn xuống (hàng nghìn)
@@ -127,8 +128,10 @@ window.Calculator = {
     // Chuẩn hóa tên để so sánh chống lệch bảng mã unicode (NFC vs NFD)
     const paidMembers = (session.paidMembers || []).map(normalizeName);
     const beerMembers = rawBeerParticipants.map(normalizeName);
+    const pickPlayersNorm = new Set(pickPlayersList.map(p => normalizeName(p.name)));
 
-    const playerRows = playersList.map(p => {
+    // Xử lý các VĐV tham gia đánh pick
+    const pickPlayerRows = pickPlayersList.map(p => {
       const pNorm = normalizeName(p.name);
       const isBeer = beerMembers.includes(pNorm);
       const isPaid = paidMembers.includes(pNorm);
@@ -138,6 +141,7 @@ window.Calculator = {
 
       return {
         ...p,
+        isPick: true,
         isBeer,
         isPaid,
         pickCost,
@@ -147,14 +151,14 @@ window.Calculator = {
       };
     });
 
-    // Sắp xếp danh sách người chơi theo quy tắc: Thua ít đứng trước · bằng thua, thắng nhiều đứng trước
-    playerRows.sort((a, b) => a.losses - b.losses || b.wins - a.wins || b.matches - a.matches);
+    // Sắp xếp VĐV đánh pick: Thua ít đứng trước · bằng thua, thắng nhiều đứng trước
+    pickPlayerRows.sort((a, b) => a.losses - b.losses || b.wins - a.wins || b.matches - a.matches);
 
-    // Gán xếp hạng theo quy tắc: Cùng trận thắng - thua thì cùng xếp hạng
+    // Gán xếp hạng cho VĐV đánh pick: Cùng trận thắng - thua thì cùng xếp hạng
     let currentRank = 1;
-    playerRows.forEach((p, idx) => {
+    pickPlayerRows.forEach((p, idx) => {
       if (idx > 0) {
-        const prev = playerRows[idx - 1];
+        const prev = pickPlayerRows[idx - 1];
         if (p.wins === prev.wins && p.losses === prev.losses) {
           p.rank = currentRank;
         } else {
@@ -167,14 +171,79 @@ window.Calculator = {
       }
     });
 
+    // Bổ sung những người KHÔNG ĐI PICK MÀ ĐI BIA (có trong beerParticipants nhưng không đánh trận nào)
+    const beerOnlyRows = [];
+    rawBeerParticipants.forEach(rawName => {
+      const cleanName = mapCanonicalName(rawName);
+      const pNorm = normalizeName(cleanName);
+      if (!pickPlayersNorm.has(pNorm)) {
+        const isPaid = paidMembers.includes(pNorm);
+        beerOnlyRows.push({
+          name: cleanName,
+          rank: null,
+          isPick: false,
+          isBeer: true,
+          isPaid,
+          matches: 0,
+          wins: 0,
+          losses: 0,
+          pointsWon: 0,
+          pointsLost: 0,
+          extraBet: 0,
+          matchLossPenalty: 0,
+          lossPenalty: 0,
+          pickCost: 0,
+          beerCost: beerPerPerson,
+          totalFinal: beerPerPerson,
+          winRate: 0
+        });
+      }
+    });
+
+    // Bổ sung người có trong extraBets nếu không đi pick cũng không uống bia (phòng ngừa)
+    const allKnownNorm = new Set([...pickPlayerRows, ...beerOnlyRows].map(p => normalizeName(p.name)));
+    const extraOnlyRows = [];
+    if (session.extraBets) {
+      for (const [rawName, extra] of Object.entries(session.extraBets)) {
+        const cleanName = mapCanonicalName(rawName);
+        const pNorm = normalizeName(cleanName);
+        if (!allKnownNorm.has(pNorm) && extra > 0) {
+          allKnownNorm.add(pNorm);
+          const isPaid = paidMembers.includes(pNorm);
+          extraOnlyRows.push({
+            name: cleanName,
+            rank: null,
+            isPick: false,
+            isBeer: false,
+            isPaid,
+            matches: 0,
+            wins: 0,
+            losses: 0,
+            pointsWon: 0,
+            pointsLost: 0,
+            extraBet: extra,
+            matchLossPenalty: 0,
+            lossPenalty: extra,
+            pickCost: extra,
+            beerCost: 0,
+            totalFinal: extra,
+            winRate: 0
+          });
+        }
+      }
+    }
+
+    const playerRows = [...pickPlayerRows, ...beerOnlyRows, ...extraOnlyRows];
+
     // Tính tổng kiểm tra
     const totalCalculatedFinal = playerRows.reduce((sum, r) => sum + r.totalFinal, 0);
 
     return {
       playerRows,
       summary: {
-        totalMatches: session.matches.length,
-        totalPlayers,
+        totalMatches: matches.length,
+        totalPlayers: playerRows.length,
+        totalPickPlayers,
         court,
         water,
         balls,
@@ -631,9 +700,11 @@ window.Calculator = {
     let players = [];
     const playerRankMap = {};
     if (fin && fin.playerRows && fin.playerRows.length > 0) {
-      players = fin.playerRows.map(p => p.name);
+      players = fin.playerRows.filter(p => playerSet.has(p.name)).map(p => p.name);
       fin.playerRows.forEach(p => {
-        playerRankMap[p.name] = p.rank || 0;
+        if (playerSet.has(p.name)) {
+          playerRankMap[p.name] = p.rank || 0;
+        }
       });
       playerSet.forEach(p => {
         if (!players.includes(p)) {
@@ -756,9 +827,11 @@ window.Calculator = {
     let players = [];
     const playerRankMap = {};
     if (fin && fin.playerRows && fin.playerRows.length > 0) {
-      players = fin.playerRows.map(p => p.name);
+      players = fin.playerRows.filter(p => playerSet.has(p.name)).map(p => p.name);
       fin.playerRows.forEach(p => {
-        playerRankMap[p.name] = p.rank || 0;
+        if (playerSet.has(p.name)) {
+          playerRankMap[p.name] = p.rank || 0;
+        }
       });
       playerSet.forEach(p => {
         if (!players.includes(p)) {

@@ -162,9 +162,11 @@ window.PICKLEBALL_DATA = {
         court: 200000,
         water: 165000,
         balls: 0,
-        beer: 0
+        beer: 1979000
       },
-      beerParticipants: [],
+      beerParticipants: [
+        "Cường", "Sơn", "Hoài Anh", "Khiêm", "Tuấn Anh", "Dũng"
+      ],
       paidMembers: [],
       extraBets: {},
       matches: [
